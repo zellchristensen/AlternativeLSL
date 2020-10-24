@@ -1,0 +1,312 @@
+// Kemono M3 Head Created by Lantis Antares
+integer channel=-53183595;
+integer Blink0A=8;
+integer Blink1=9;
+integer Blink2=2;
+integer Blink3=14;
+integer Blink0B=13; //special
+vector ColorEyelashes;
+integer WindowsEye;
+key OwnKey;
+
+float  posX=0;
+float  posY=0;
+float  offX=0.05;
+integer pnt=0;
+list alstX=[-0.05,0.05,-0.05,0.0,-0.05,0.0,0.05,0.05,-0.05];
+list alstY=[0.05,-0.05,0.05,0.05,0.05,0.0,-0.05,0.05,-0.05];
+
+vector COLOR_BLINK=<0.0,0.0,0.0>;
+vector COLOR_WHITE = <1.0,1.0,1.0>;
+// ********************************
+vector llGetLinkColor(integer link,integer face){
+return llList2Vector(llGetLinkPrimitiveParams(link,[PRIM_COLOR,face]),0);
+}
+//*********************************
+llSetLinkOffset(integer link,integer face,float h,float v){
+    list Param=llGetLinkPrimitiveParams(link,[ PRIM_TEXTURE,face]);
+     Param = llListReplaceList(Param, [<h,v,0>], 2, 2); 
+    llSetLinkPrimitiveParamsFast(link,[PRIM_TEXTURE,face]+Param);
+}
+// ********
+llSetLinkScaleTexture(integer link,integer face,vector scale){
+    list Param=llGetLinkPrimitiveParams(link,[PRIM_TEXTURE,face]);
+    Param = llListReplaceList(Param, [scale], 1, 1); 
+    llSetLinkPrimitiveParamsFast(link,[PRIM_TEXTURE,face]+Param); 
+}
+// ********************
+key llGetLinkTexture(integer link,integer face){
+    return llList2Key(llGetLinkPrimitiveParams(link,[PRIM_TEXTURE, face]),0);
+}
+// ********************
+integer GetIntDesc(string Name){
+    list TableDesc=["Head","Blink2","e07","e11","tongue","eyes","teeth","Blink0A","Blink1",
+                    "e03","e05","e04","Blink0B","Blink3","effects","e06","e08",
+                    "e12","e09","sunglasses","Blink_fix","e10","e02","e13","e01","facelight"];
+    return llListFindList(TableDesc,[Name])+1;                    
+}
+//*********************************
+llSetMLinkColor(list LinkList,vector color,integer face){
+  integer i=llGetListLength(LinkList)-1;
+    for(;i>=0;i--){
+      llSetLinkColor(llList2Integer(LinkList,i),color,face);
+    }
+}
+// ********************
+hideSystem(string msg){
+    list my_list = llParseString2List(msg,"_","");
+    list my_Sublist;
+    integer i=llGetListLength(my_list)-1;
+    string SubMsg;
+    integer Hidelink;
+    vector SubFaceColor;
+    integer SubF;
+    float HideAlpha=llList2Float(my_list,i--);
+    for(;i>=0;i--){
+        SubMsg=llList2String(my_list,i);
+        my_Sublist=llParseString2List(SubMsg,":","");
+        Hidelink=GetIntDesc(llList2String(my_Sublist,0));
+        if ((Hidelink)&&(llGetListLength(my_Sublist)>0)){
+        
+            SubF= llGetLinkNumberOfSides(Hidelink)-1;
+            SubMsg=llList2String(my_Sublist,1);
+            if (SubMsg=="-1"){
+                    SubFaceColor=llList2Vector(llGetLinkPrimitiveParams(Hidelink,[PRIM_COLOR,0]),0);
+                    llSetLinkPrimitiveParamsFast(Hidelink,[PRIM_COLOR,ALL_SIDES,SubFaceColor,HideAlpha]);
+            }else{
+                for(;SubF>=0;SubF--){
+                    if (llSubStringIndex(SubMsg,(string)SubF)>=0){
+                        SubFaceColor=llList2Vector(llGetLinkPrimitiveParams(Hidelink,[PRIM_COLOR,SubF]),0);
+                        llSetLinkPrimitiveParamsFast(Hidelink,[PRIM_COLOR,SubF,SubFaceColor,HideAlpha]);
+                    }                
+                }
+           }
+        }        
+    }
+}
+integer KeyAdv(key KeySrg,string msg){
+    KeySrg=llGetOwnerKey(KeySrg);
+    integer idx=llSubStringIndex(msg,(string)OwnKey);
+    if (idx>0) OwnKey=KeySrg;
+    return (OwnKey==KeySrg);
+}
+// ********************
+list VectorNormalize(list params){
+        integer length = llGetListLength(params)-1;        
+        vector VPar;
+        string SubStr;
+        for (;length>0;length--){
+            SubStr=llList2String(params,length);
+            if (llSubStringIndex(SubStr,"<")>-1){ 
+                VPar=(vector)SubStr;
+                params=llListReplaceList(params,[VPar],length,length);
+             }
+        } 
+    return params;
+}
+// ********************
+SetParameter(string message){
+    list SSublist=llParseString2List(message,"/","");
+    integer i=llGetListLength(SSublist)-1;
+    list my_Sublist;
+    integer SubLink;
+    for(;i>0;i--){
+        my_Sublist=llParseString2List(llList2String(SSublist,i),":","");
+        SubLink=GetIntDesc(llList2String(my_Sublist,0));
+        if (!SubLink) return;
+        my_Sublist=llDeleteSubList(my_Sublist,0,0);        
+        llSetLinkPrimitiveParamsFast(SubLink,VectorNormalize(my_Sublist));
+    }
+}
+// ********************
+SetKMSkin(key UUIDSkin,list SubSkin){                
+    integer i=llGetListLength(SubSkin)-1;
+    list my_Sublist;
+    integer SkinLink;
+    integer SkinFace;
+    for(;i>=0;i--){
+        my_Sublist=llParseString2List(llList2String(SubSkin,i),":","");  
+        SkinLink=GetIntDesc(llList2String(my_Sublist,0));
+        if ((SkinLink)&&(llGetListLength(my_Sublist)>0)){
+            SkinFace=llList2Integer(my_Sublist,1);
+            llSetLinkTexture(SkinLink,UUIDSkin,SkinFace);
+        }                   
+    }    
+}
+// ********************
+llOffsetTextureFast(float Offx,float Offy){    
+    list Param1=llGetLinkPrimitiveParams(6,[ PRIM_TEXTURE,1]);
+     Param1 = llListReplaceList(Param1, [<Offx,Offy,0>], 2, 2); 
+    list Param2=llGetLinkPrimitiveParams(6,[ PRIM_TEXTURE,2]);
+     Param2 = llListReplaceList(Param2, [<Offx,Offy,0>], 2, 2); 
+    list Param3=llGetLinkPrimitiveParams(6,[ PRIM_TEXTURE,3]);
+     Param3 = llListReplaceList(Param3, [<Offx,Offy,0>], 2, 2); 
+    list Param4=llGetLinkPrimitiveParams(6,[ PRIM_TEXTURE,4]);
+     Param4 = llListReplaceList(Param4, [<Offx,Offy,0>], 2, 2); 
+    llSetLinkPrimitiveParamsFast(6,[PRIM_TEXTURE,1]+Param1+[PRIM_TEXTURE,2]+Param2+[PRIM_TEXTURE,3]+Param3+[PRIM_TEXTURE,4]+Param4);
+}
+// ********************
+KMDefault(){
+key TextureSkin="6efb5618-4084-4a1f-87d1-83520574db7a";
+key TextureBlush="95c9e7a7-0c6d-4c53-977c-3f97ce3ab510";
+key TextureEyelashes="d5c2d37a-9468-439a-be5d-2360d5b8ee41";
+key TextureEyebrows="c3bc80af-4844-451c-a00f-ceaafe196dd7";
+key TextureFilterEyeL="e7dfeb4c-209e-43d1-9f8a-74426112377a";
+key TextureFilterEyeR="58641454-20d5-43eb-9e3e-ccb6888bef2e";
+key TextureEyeR="baded90b-2ec0-498a-bb98-38853a49f954";
+key TextureEyeL="75d01938-057c-4e36-b743-8b57c4f5af21";
+key TextureTears="ba639047-0e25-4601-b206-3546f33c211a";
+key TextureGlasses="0bde115a-0c42-4514-9a3f-1f2ae9c78380";     
+vector COLOR_BLACK = <0.0,0.0,0.0>;
+vector COLOR_RED = <1.0,0.0,0.0>;
+    
+    llSetLinkColor(LINK_SET,COLOR_WHITE,ALL_SIDES);   
+    llSetLinkColor(1,COLOR_BLINK,0);
+    list KMSkin=["Head:2","Blink2:1","e07:1","e11:1","tongue:0","teeth:0","teeth:1","Blink0A:2","Blink1:1",
+        "e03:1","eyes:0","e05:1","e04:1","Blink0B:1","Blink3:1","e06:1","e08:1","e12:1","e09:1",
+        "Blink_fix:2","e10:1","e02:1","e13:1","e01:1"];                
+    SetKMSkin(TextureSkin,KMSkin);
+        
+    KMSkin=["Head:1","Blink2:0","e07:0","e11:0","Blink0A:1","Blink1:0",    
+        "e03:0","e05:0","e04:0","Blink0B:0","Blink3:0","e06:0","e08:0","e12:0","e09:0",
+        "Blink_fix:1","e10:0","e02:0","e13:0","e01:0","facelight:0"];        
+    SetKMSkin(TEXTURE_TRANSPARENT,KMSkin);
+        
+    KMSkin=["Blink2:2","Blink0A:0","Blink1:2","Blink0B:2","Blink3:2","Blink_fix:0"];    
+    SetKMSkin(TextureEyelashes,KMSkin);
+    
+    SetKMSkin(TextureGlasses,["sunglasses:0"]);
+    SetKMSkin(TextureGlasses,["sunglasses:0"]);
+    SetKMSkin(TextureTears,["effects:0"]);    
+    SetKMSkin(TextureBlush,["effects:1"]);
+    SetKMSkin(TextureFilterEyeR,["eyes:1"]);
+    SetKMSkin(TextureEyeL,["eyes:2"]);
+    SetKMSkin(TextureFilterEyeL,["eyes:3"]);
+    SetKMSkin(TextureEyeR,["eyes:4"]);
+    SetKMSkin(TextureEyebrows,["Head:0"]);
+    string MessageDef="e07:-1_e11:-1_touge:-1_teeth:-1_e03:-1_e05:-1_e04:-1_effect:-1_e06:-1_e08:-1";
+    MessageDef+="_e12:-1_e09:-1_sunglass:-1_e10:-1_e02:-1_e13:-1_Blink0B:-1_0";
+     hideSystem(MessageDef);
+     MessageDef="Hand:-1_e01:-1_eyes:-1_Blink_fix:-1_1";
+    hideSystem(MessageDef);
+    llSetLinkColor(1,COLOR_BLACK,0); 
+    llSetLinkColor(13,COLOR_BLACK,2);
+    llSetLinkColor(15,COLOR_RED,1);
+    llSetLinkColor(21,COLOR_BLACK,0);
+}
+MTears(integer SetTears){
+        if (SetTears) llSetLinkAlpha(15,1.0,0); else  llSetLinkAlpha(15,0.0,0);
+        llSetLinkOffset(15,0,0.0,0.5*(SetTears-1));
+}
+MBlush(integer SetBlush){
+        if (SetBlush) llSetLinkAlpha(15,1.0,1); else  llSetLinkAlpha(15,0.0,1);
+        llSetLinkOffset(15,1,0.0,-0.3333*SetBlush);            
+}
+LightControl(integer ToggleLight){
+    if (ToggleLight){
+        vector COLOR_ORANGE  = <1.000, 0.9, 0.8>;                
+        llSetLinkPrimitiveParamsFast(26,[PRIM_FULLBRIGHT, ALL_SIDES, TRUE,
+                PRIM_POINT_LIGHT, TRUE, COLOR_ORANGE, 1.0, 0.5, 0.5]);
+    }else   
+        llSetLinkPrimitiveParamsFast(26,[
+                PRIM_FULLBRIGHT, ALL_SIDES, FALSE,
+                PRIM_POINT_LIGHT, FALSE, ZERO_VECTOR, 1.0, 0.5, 0.5]);          
+}
+// ***************************
+EyeLipsFix(integer EyeLips){
+    if (EyeLips==3){
+//        llSetTimerEvent(0);
+        llSetScriptState("[M3K Blinky]",FALSE);
+        llSetLinkAlpha(Blink3,1.0,ALL_SIDES);
+        llSetLinkAlpha(Blink0A,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink1,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink2,0.0,ALL_SIDES);
+    }else if (EyeLips==2){
+        llSetScriptState("[M3K Blinky]",FALSE);
+        llSetLinkAlpha(Blink2,1.0,ALL_SIDES);
+        llSetLinkAlpha(Blink0A,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink1,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink3,0.0,ALL_SIDES);
+    }else if (EyeLips==1){
+        llSetScriptState("[M3K Blinky]",FALSE);
+        llSetLinkAlpha(Blink1,1.0,ALL_SIDES);
+        llSetLinkAlpha(Blink0A,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink2,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink3,0.0,ALL_SIDES);
+    }else if (EyeLips==0){
+        llSetLinkAlpha(Blink0A,1.0,ALL_SIDES);
+        llSetLinkAlpha(Blink1,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink2,0.0,ALL_SIDES);
+        llSetLinkAlpha(Blink3,0.0,ALL_SIDES);
+        llSetScriptState("[M3K Blinky]",TRUE);
+    }
+}
+SubFullColor(string msg){
+    vector SubColor=(vector)msg;    
+    llSetMLinkColor([2,9,13,14],SubColor,1);
+    llSetMLinkColor([1,8,21],SubColor,2);
+    llSetMLinkColor([3,4,10,11,12,16,17,18,19,22,23,24,25],SubColor,ALL_SIDES);
+}
+// ***************************
+default{ 
+    state_entry(){
+        llListen(channel, "", "", "");
+        llSetLinkAlpha(Blink0B,0.0,ALL_SIDES);
+        llSetLinkAlpha(3,0.0,ALL_SIDES);
+        LightControl(FALSE);
+        OwnKey=llGetOwner();
+        ColorEyelashes=llGetLinkColor(1,0);
+        llSetTimerEvent(3);
+        llOffsetTextureFast(posX+offX,posY);        
+    }
+    changed(integer change){
+        if (change & CHANGED_OWNER){
+            llResetScript();
+        }
+    }
+//MTears,Meye,Mblush,Meyebrows
+    listen(integer channel, string name, key id, string message){
+   //     llOwnerSay(message);        
+        if (!KeyAdv(id,message)) return;
+        list Sublist=llParseString2List(message,"/","");        
+        string command=llList2String(Sublist,0);
+        if (command=="light"){
+            LightControl(llList2Integer(Sublist,1));
+        }else if (command=="MTears"){
+            MTears(llList2Integer(Sublist,1));            
+        }else if (command=="Meye"){
+            EyeLipsFix(llList2Integer(Sublist,1));
+        }else if (command=="Mblush"){
+            MBlush(llList2Integer(Sublist,1));            
+        }else if (command=="Meyebrows"){
+            llOffsetTexture(0.0,(2-llList2Integer(Sublist,1)) * 0.3,0);
+        }else if (command=="SetPar"){
+            SetParameter(message);      
+        }else if (command=="SetEyeSize"){
+            vector VScale=llList2Vector(Sublist,1);
+             llSetLinkScaleTexture(6,1,VScale);
+             llSetLinkScaleTexture(6,2,VScale);
+             llSetLinkScaleTexture(6,3,VScale);
+             llSetLinkScaleTexture(6,4,VScale);
+        }else if (command=="FullColor"){
+            SubFullColor(llList2String(Sublist,1));
+        }else if (command=="SetSkin"){
+            list KMSkin=["e07:1","e11:1","tongue:0","teeth:0","teeth:1","e03:1","e05:1","e04:1",
+            "e06:1","e08:1","e12:1","e09:1","Blink_fix:2","e10:1","e02:1","e13:1","Blink1:1","Blink0B:1",
+            "Blink3:1","Blink0A:2","Blink2:1","e01:1","Head:2"];
+            SetKMSkin(llList2Key(Sublist,1),KMSkin);
+        }else if (command=="typing"){
+                llSetScriptState("[M3K Face]",(llList2Integer(Sublist,1)==1));                
+        }else if (command=="KMDefault"){
+            KMDefault();
+        }else{
+            hideSystem(message);
+        }
+     }
+    timer(){
+         posX=llList2Float(alstX,pnt);
+         posY=llList2Float(alstY,pnt);
+         llOffsetTextureFast(posX+offX,posY);         
+         if (pnt<8)pnt++; else pnt=0;
+    }   
+} 
