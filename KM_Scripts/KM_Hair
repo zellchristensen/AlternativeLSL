@@ -1,0 +1,119 @@
+//Drop this script into an object with up to 22 textures inside.
+
+//When anyone Touches they will get a menu with all the textures available. Button names in menu will be first 10 characters from that item's name.
+
+//NOTE: Texture Names may not exceed 24 characters or script error and menu fails.
+
+
+integer side = ALL_SIDES; //ALL_SIDES or any face number 0 through 5
+
+list texture_list;
+list texture_list2;
+key user = NULL_KEY;
+
+composelist()
+{
+    integer currenttexture = 0;
+    integer totaltextures = llGetInventoryNumber(INVENTORY_TEXTURE);
+
+    if(totaltextures > 0 & totaltextures <= 12)
+    {
+        texture_list = [];
+        do
+        {
+            texture_list = texture_list + llGetInventoryName(INVENTORY_TEXTURE, currenttexture);
+            currenttexture++;
+        }
+        while (currenttexture > 0 & currenttexture < totaltextures);
+    }
+
+    if(totaltextures > 12 & totaltextures <= 22)
+    {
+        texture_list = ["Next Page"];
+        do
+        {
+            texture_list = texture_list + llGetInventoryName(INVENTORY_TEXTURE, currenttexture);
+            currenttexture++;
+        }
+        while (currenttexture > 0 & currenttexture < 11);
+
+        texture_list2 = ["Last Page"];
+        do
+        {
+            texture_list2 = texture_list2 + llGetInventoryName(INVENTORY_TEXTURE, currenttexture);
+            currenttexture++;
+        }
+        while (currenttexture >= 11 & currenttexture < totaltextures);
+    }
+
+    if(totaltextures > 22)
+    {
+        llWhisper(0, "You may only have a maximimum of 22 Textures. Please remove any extra ones.");
+    }
+    if(totaltextures == 0)
+    {
+        llWhisper(0, "Please add up to 22 Textures inside this object.");
+    }
+}
+
+
+//The Menu
+integer menu_handler;
+integer menu_channel;
+menu(key user,string title,list texture_list)
+{
+    menu_channel = (integer)(llFrand(99999.0) * -1); //random channel
+    menu_handler = llListen(menu_channel,"","","");
+    llDialog(user,title,texture_list,menu_channel);
+    llSetTimerEvent(30.0); //menu channel open for 30 seconds
+}
+
+default
+{
+    state_entry()
+    {
+        composelist(); //make list from inventory textures
+    }
+
+    touch_start(integer total_number)
+    {
+        user = llDetectedKey(0);
+        menu(user,"nnPlease select one below.",texture_list);
+    }
+
+    listen(integer channel,string name,key id,string message)
+    {
+        if (channel == menu_channel)
+        {
+            llSetTimerEvent(0.0);
+            llListenRemove(menu_handler);
+            if(message == "Next Page")
+            {
+                menu(user,"nnPlease select one below.",texture_list2);
+            }
+            else if(message == "Last Page")
+            {
+                menu(user,"nnPlease select one below.",texture_list);
+            }
+            else
+            {
+                llSetTexture(message, side);
+            }
+        }
+    }
+
+    timer() //Close the Menu Listen or we'll get laggy
+    {
+        llSetTimerEvent(0.0);
+        llListenRemove(menu_handler);
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_INVENTORY) //inventory has changed
+        {
+            llSleep(0.5);
+            composelist(); //rebuild the list
+        }
+    }
+}
