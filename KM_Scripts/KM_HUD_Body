@@ -1,0 +1,376 @@
+// Kemono Body HUD Create from Lanti Antares
+integer toggleAdvance;
+integer channel =-53183596;
+vector LocPos2;
+integer togglefaceL;
+integer togglefaceR;
+list TableLinkA;
+integer gListener;
+integer LegsToggle=TRUE;
+integer ToggleTexture=TRUE;
+integer ToggleSetting=FALSE;
+string Tailuuid;
+string Headuuid;
+float ScaleX;
+// ********************************
+key llGetLinkTexture(integer link,integer face){
+    return llList2Key(llGetLinkPrimitiveParams(link,[PRIM_TEXTURE, face]),0);
+}
+llSetLinkPosLocal(integer link,vector pos){
+     llSetLinkPrimitiveParams(link,[PRIM_POS_LOCAL,pos ]);
+}
+vector llGetLinkPosLocal(integer link){
+     return llList2Vector(llGetLinkPrimitiveParams(link,[PRIM_POS_LOCAL]),0);
+}
+
+float llGetLinkAlpha(integer link,integer face){
+    return llList2Float(llGetLinkPrimitiveParams(link,[ PRIM_COLOR,face]),1);
+}
+
+llSetLinkOffsetTexture(integer link, float u, float v, integer face )
+{
+    list ParText=llGetLinkPrimitiveParams(link,[ PRIM_TEXTURE, face]);
+    llSetLinkPrimitiveParams(link,[ PRIM_TEXTURE,face,llList2String(ParText,0),llList2Vector(ParText,1),<u,v,0>,llList2Float(ParText,3)]);
+}
+//*********************************
+// 2:         valid key, not NULL_KEY
+// 1 (TRUE):  NULL_KEY
+// 0 (FALSE): not a key
+integer isKey(key in){
+    if (in)
+        return 2;
+    return (in == NULL_KEY);
+}
+//*********************************
+TaskAdvancedHide(integer link,integer face,list TableHide){
+      string SubStringa=llList2String(TableHide,face);
+      if(llGetLinkAlpha(link,face)>0){
+           llSetLinkAlpha(link,0,face);
+           llRegionSay(channel,SubStringa+"_0");
+      }else{
+           llSetLinkAlpha(link,1,face);
+           llRegionSay(channel,SubStringa+"_1");
+      }
+}
+// ********************************
+AddCustomTexture(){
+   string TextBoxHelp="Acceptable commands";
+        TextBoxHelp+="\n*Note: Asterisk* between command and UUID, no spaces! One command at a time!";
+        TextBoxHelp+="\n\nhead*UUID";
+        TextBoxHelp+="\nbody*UUID";
+        TextBoxHelp+="\ntail*UUID";
+        TextBoxHelp+="\n\nExample:";
+        TextBoxHelp+="\nbody*00000000-0000-0000-0000-000000000000\n\n";
+   gListener = llListen( channel+2, "", "", "");
+   llTextBox(llDetectedKey(0),TextBoxHelp, channel+2);
+}
+// ********************************
+AdvanceHideFace(integer face,integer FaceOnOff){
+       list TableAdvanceHide=["L1:0:L9:0","L1:1:2:3:4:L9:1:2:3:4","L10:0:1:L3:0:L8:0","L3:1:2:L8:1:2",
+       "L3:3:4:5:L8:3:4:5", "L3:6:7:L8:6:7:L5:0","L5:1:2:3:4:5:L1:5:6:L9:5:6","L5:6:7"];
+    list Token = llParseString2List(llList2String(TableAdvanceHide,face),":","");
+    integer i;
+    integer SubLink;
+    string SubToken;
+    for(i=0;i<(llGetListLength(Token));i++){
+        SubToken=llList2String(Token,i);
+        if (llGetSubString(SubToken,0,0)=="L"){
+            SubLink=(integer)llGetSubString(SubToken,1,2);
+            if (SubLink==0) return;
+        }else{
+            integer subface=llList2Integer(Token,i);
+            llSetLinkAlpha(SubLink,FaceOnOff,subface);
+        }
+    }
+}
+// ********************************
+ToggleAdvanceBase(){
+      key AdvanceTexture;
+      key BaseTexture;
+      string SubTexture=llGetLinkTexture(4,0);
+      vector PositionL2=llGetLinkPosLocal(2);
+      if (toggleAdvance){
+          AdvanceTexture=SubTexture;
+          BaseTexture=TEXTURE_TRANSPARENT;
+          PositionL2.x=llFabs(PositionL2.x);
+      }else{
+          AdvanceTexture=TEXTURE_TRANSPARENT;
+          BaseTexture=SubTexture;
+          PositionL2.x=-llFabs(PositionL2.x);
+      }
+      llSetLinkPrimitiveParamsFast(5,[
+      PRIM_TEXTURE,ALL_SIDES,AdvanceTexture,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+      PRIM_LINK_TARGET,9,PRIM_TEXTURE,ALL_SIDES,AdvanceTexture,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+      PRIM_LINK_TARGET,1,PRIM_TEXTURE,ALL_SIDES,AdvanceTexture,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+      PRIM_LINK_TARGET,8,PRIM_TEXTURE,ALL_SIDES,AdvanceTexture,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+      PRIM_LINK_TARGET,3,PRIM_TEXTURE,ALL_SIDES,AdvanceTexture,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+      PRIM_LINK_TARGET,10,PRIM_TEXTURE,ALL_SIDES,AdvanceTexture,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+      PRIM_LINK_TARGET,2,PRIM_TEXTURE,ALL_SIDES,BaseTexture,<1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+      PRIM_POS_LOCAL,PositionL2,
+      PRIM_LINK_TARGET,4,PRIM_TEXTURE,0,SubTexture,<1.0, 1.0, 0.0>, <0,0,0>, 0.0
+      ]);
+}
+// ********************************
+default{
+   state_entry(){
+        toggleAdvance=FALSE;
+        llSetLinkOffsetTexture(7,0,0,2);
+        togglefaceR=0;
+        togglefaceL=0;
+        vector Scale=llGetScale();
+        ScaleX= 0.149145/Scale.x;
+        LocPos2=llGetLocalPos();
+        integer point = llGetAttached();
+        if ((point == ATTACH_HUD_BOTTOM_RIGHT)||(point == ATTACH_HUD_TOP_LEFT)){
+            LocPos2.y=-0.12*ScaleX;
+        }else if  ((point == ATTACH_HUD_TOP_RIGHT)||(point == ATTACH_HUD_BOTTOM_LEFT)){
+            LocPos2.y=-0.12*ScaleX;
+        }
+       llSetLinkAlpha(4,1,4);
+       llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_POSITION, LocPos2]);
+       ToggleAdvanceBase();
+    }
+    changed(integer change)
+    {
+        if (change & CHANGED_SCALE){
+            vector Scale=llGetScale();
+            ScaleX= Scale.x/0.149145;
+        }
+    }
+    attach(key id){
+        Tailuuid="";
+        Headuuid="";
+        vector Scale=llGetScale();
+        ScaleX= 0.149145/Scale.x;
+        LocPos2=llGetLocalPos();
+        LocPos2.y=-0.12*ScaleX;
+        llSetLinkAlpha(4,1,4);
+        llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_POSITION, LocPos2]);
+        llSetLinkTexture(7,TEXTURE_TRANSPARENT,3);
+        llSetLinkTexture(7,TEXTURE_TRANSPARENT,5);
+    }
+    listen(integer channel, string name, key id, string message){
+        if (llGetOwnerKey(id)!= llGetOwner()) return;
+        list SSublist=llParseString2List(message,"*","");
+        llListenRemove(gListener);
+        if (llGetListLength(SSublist)<2)return;
+        string command=llList2String(SSublist,0);
+        key KeyMsg=llList2Key(SSublist,1);
+        if (isKey(KeyMsg)!=2)return;
+        if (command=="body"){
+            llSetLinkTexture(7,KeyMsg,3);
+            llSetLinkTexture(7,KeyMsg,5);
+            llOwnerSay("Custom Body skin added");
+            return;
+        }else if (command=="head"){
+            Headuuid=(string)KeyMsg;
+            llOwnerSay("Custom hand skin added");
+            return;
+        }else if (command=="tail"){
+            Tailuuid=(string)KeyMsg;
+            llOwnerSay("Custom tail skin added");
+            return;
+        }else llOwnerSay("Error: "+command+" not a valid command");
+    }
+    touch_start(integer num_detected){
+        integer link = llDetectedLinkNumber(0);
+        integer face = llDetectedTouchFace(0);
+        vector arrow=llDetectedTouchST(0);
+
+        if (face == TOUCH_INVALID_FACE){
+            llSay(PUBLIC_CHANNEL, "Sorry, your viewer doesn't support touched faces.");
+        }else{
+            integer ShiftLeg;
+        // link1
+          if (link==1){
+            TableLinkA=["handL:-1","arms:3","arms:7","arms:4","arms:0","neck:3","neck:7"];
+            TaskAdvancedHide(link,face,TableLinkA);
+        // link2
+          }else if (link==2){
+            list TableLinkA=["handR:-1_handL:-1","arms:01234567","RHleg:01_LHleg:01","RHleg:23_LHleg:23",
+            "RHleg:456_LHleg:456","hips:014567_PG:01","hips:23_body:01234567_neck:0347_PG:23","neck:1256","RFleg:05_LFleg:05",
+            "RFleg:34_LFleg:34","RFleg:126_LFleg:126"];
+            ShiftLeg=0;
+
+            if (((face==2)||(face==3)||(face==4))&&(!LegsToggle)) ShiftLeg=6;
+            string SubStringa=llList2String(TableLinkA,face+ShiftLeg);
+                if(llGetLinkAlpha(link,face)>0){
+                    llSetLinkAlpha(link,0,face);
+                    llRegionSay(channel,SubStringa+"_0");
+                    AdvanceHideFace(face,0);
+                }else{
+                    llSetLinkAlpha(link,1,face);
+                    llRegionSay(channel,SubStringa+"_1");
+                    AdvanceHideFace(face,1);
+                }
+        // link3
+          }else if (link==3){
+            if (!LegsToggle){
+                TableLinkA=["LFleg:5","LFleg:4","LFleg:3","LFleg:2","LFleg:1","LFleg:6","hips:7","hips:6"];
+            }else{
+                TableLinkA=["LHleg:1","LHleg:2","LHleg:3","LHleg:4","LHleg:5","LHleg:6","hips:7","hips:6"];
+            }
+            TaskAdvancedHide(link,face,TableLinkA);
+        // link4
+          }else if (link==4){
+            string FaceTxt=llGetLinkTexture(4,0);
+            if (face==0){
+                toggleAdvance=!toggleAdvance;
+                ToggleAdvanceBase();
+            }else if (face==1){
+                togglefaceL++;
+                if (togglefaceL>4)togglefaceL=0;
+                llRegionSay(channel, "Hand/L/"+togglefaceL);
+                llSetLinkPrimitiveParamsFast(link,[PRIM_TEXTURE, face,FaceTxt, <1.0, 1.0, 0.0>, <(0.086 * togglefaceL),0.0,0.0>, 0.0 ]);
+            }else if (face==2){
+                togglefaceR++;
+                if (togglefaceR>4)togglefaceR=0;
+                llRegionSay(channel, "Hand/R/"+togglefaceR);
+                llSetLinkPrimitiveParamsFast(link,[PRIM_TEXTURE, face,FaceTxt, <1.0, 1.0, 0.0>, <(0.086 * togglefaceR),0.0,0.0>, 0.0 ]);
+            }else if (face==3){
+                if (llVecDist(arrow,<0.73,0.26,0.0>)<0.029){
+                    ToggleSetting=!ToggleSetting;
+                    if (ToggleSetting) LocPos2.y=0.3*ScaleX; else LocPos2.y=0.05*ScaleX;
+                }else if (llVecDist(arrow,<0.80195,0.28345,0.0>)<0.05){
+                    llRegionSay(channel, "Undeform");
+                    llOwnerSay("Start undeform animation");
+                }else if ((arrow.x>0.574)&&(arrow.x<0.7)&&(arrow.y>0.218)&&(arrow.y<0.25)){
+                    llSetLinkPrimitiveParamsFast(4,[PRIM_COLOR,4,<1,1,1>,1]);
+                    LocPos2.y=-0.12*ScaleX;
+                }
+                llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_POSITION, LocPos2]);
+            }else if (face==4){
+                if (ToggleSetting) LocPos2.y=0.3*ScaleX; else LocPos2.y=0.05*ScaleX;
+                llSetLinkPrimitiveParamsFast(4,[PRIM_COLOR,4,<1,1,1>,0]);
+                llSleep(0.1);
+                llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_POSITION, LocPos2]);
+            }else if (face==5){
+            }
+        // link5
+          }else if (link==5){
+            TableLinkA=["hips:01","hips:23","body:76","body:31","body:25","body:04","neck:16","neck:25"];
+            TaskAdvancedHide(link,face,TableLinkA);
+        // link6
+          }else if (link==6){
+                if(face==0){
+                    llSetLinkAlpha(link,1.0,0);
+                    llSetLinkAlpha(link,0.0,3);
+                    llSetLinkAlpha(link,0.0,6);
+                    llRegionSay(channel,"Tail0");
+                }else if(face==2){
+                    llSetLinkAlpha(link,1.0,2);
+                    llSetLinkAlpha(link,0.0,5);
+                    LegsToggle=TRUE;
+                    if (toggleAdvance){
+                        llSetLinkAlpha(8,1,ALL_SIDES);
+                        llSetLinkAlpha(3,1,ALL_SIDES);
+                        llSetLinkAlpha(10,1,ALL_SIDES);
+                    }else{
+                        llSetLinkAlpha(2,1,2);
+                        llSetLinkAlpha(2,1,3);
+                        llSetLinkAlpha(2,1,4);
+                    }
+                    llRegionSay(channel,"RFleg:-1_LFleg:-1_0");
+                    llRegionSay(channel,"RHleg:-1_LHleg:-1_1");
+
+                }else if(face==3){
+                    llSetLinkAlpha(link,0.0,0);
+                    llSetLinkAlpha(link,1.0,3);
+                    llSetLinkAlpha(link,0.0,6);
+                    llRegionSay(channel,"Tail1");
+                }else if(face==5){
+                    llSetLinkAlpha(link,0.0,2);
+                    llSetLinkAlpha(link,1.0,5);
+                    LegsToggle=FALSE;
+                    if (toggleAdvance){
+                        llSetLinkAlpha(8,1,ALL_SIDES);
+                        llSetLinkAlpha(3,1,ALL_SIDES);
+                        llSetLinkAlpha(10,1,ALL_SIDES);
+                    }else{
+                        llSetLinkAlpha(2,1,2);
+                        llSetLinkAlpha(2,1,3);
+                        llSetLinkAlpha(2,1,4);
+                    }
+                    llRegionSay(channel,"RHleg:-1_LHleg:-1_0");
+                    llRegionSay(channel,"RFleg:-1_LFleg:-1_1");
+                }else if(face==6){
+                    llSetLinkAlpha(link,0.0,0);
+                    llSetLinkAlpha(link,0.0,3);
+                    llSetLinkAlpha(link,1.0,6);
+                    llRegionSay(channel,"Tail2");
+                }else{
+                    string AlphaButton="-1";
+                  if (face==4) AlphaButton="2_PG:3";
+                  else if (face==1) AlphaButton="0_PG:1";
+
+                    if(llGetLinkAlpha(link,face)>0){
+                        llSetLinkAlpha(link,0,face);
+                        AlphaButton+="_0";
+                    }else{
+                        llSetLinkAlpha(link,1,face);
+                        AlphaButton+="_1";
+                    }
+                    llRegionSay(channel,"PG:"+AlphaButton);
+
+
+                   string AlphaButton1;
+                  if (face==4) AlphaButton1="4_PG:3";
+                  else if (face==1) AlphaButton1="4_PG:1";
+                  if(llGetLinkAlpha(link,face)>0){ AlphaButton1+="_1";
+                  }else{ AlphaButton1+="_0";
+                    }
+
+                    llRegionSay(channel,"PG:"+AlphaButton1);
+
+
+
+                }
+        // link7
+          }else if (link==7){
+               integer currentCellNumber = llFloor(arrow.x*20) + (22 -llCeil(arrow.y*22))*20 + 1;
+                if ((face==3)||(face==5)){
+                    AddCustomTexture();
+                }else if (face==2){
+                   integer TableSkin = llFloor(arrow.x*6) + (2 -llCeil(arrow.y*2))*6;
+                   if (TableSkin>3) TableSkin-=3;
+                   TableSkin+=11;
+                   integer cnt=0;
+                   if (!ToggleTexture) cnt=3;
+                   llRegionSay(channel+1,"SetSkin/"+llGetLinkTexture(TableSkin,cnt++));
+                   llRegionSay(channel,"SkinBody/"+llGetLinkTexture(TableSkin,cnt++));
+                   llRegionSay(channel,"TailSkin/"+llGetLinkTexture(TableSkin,cnt++));
+                }else if ((currentCellNumber==247)||(currentCellNumber==267)||(currentCellNumber==261)||(currentCellNumber==241)){
+                    llSetLinkOffsetTexture(link,0.5*ToggleTexture,0,2);
+                    ToggleTexture=!ToggleTexture;
+                }else if ((currentCellNumber>287)&&(currentCellNumber<291)){
+                        string uuidBody=llGetLinkTexture(7,3);
+                        if (uuidBody!=TEXTURE_TRANSPARENT)llRegionSay(channel,"SkinBody/"+uuidBody);
+                        if (Tailuuid!="") llRegionSay(channel,"TailSkin/"+Tailuuid);
+                        if (Headuuid!="") llRegionSay(channel+1,"SetSkin/"+Headuuid);
+                        llSetLinkTexture(7,TEXTURE_TRANSPARENT,3);
+                        llSetLinkTexture(7,TEXTURE_TRANSPARENT,5);
+               }
+        // link8
+          }else if (link==8){
+            if (!LegsToggle){
+                TableLinkA=["RFleg:5","RFleg:4","RFleg:3","RFleg:2","RFleg:1","RFleg:6","hips:4","hips:5"];
+            }else{
+                TableLinkA=["RHleg:1","RHleg:2","RHleg:3","RHleg:4","RHleg:5","RHleg:6","hips:4","hips:5"];
+            }
+            TaskAdvancedHide(link,face,TableLinkA);
+        // link9
+          }else if (link==9){
+            TableLinkA=["handR:-1","arms:1","arms:2","arms:5","arms:6","neck:0","neck:4"];
+            TaskAdvancedHide(link,face,TableLinkA);
+        // link10
+          }else if (link==10){
+            if (!LegsToggle){
+                TableLinkA=["LFleg:0","RFleg:0"];
+            }else{
+                TableLinkA=["LHleg:0","RHleg:0"];
+            }
+            TaskAdvancedHide(link,face,TableLinkA);
+          }
+        }
+    }
+}
