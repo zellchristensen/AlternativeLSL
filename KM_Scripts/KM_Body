@@ -1,0 +1,161 @@
+// Kemono body Created by Lantis Antares
+integer channel=-53183596;
+string Animation;
+integer indexHandL;
+integer indexHandR;
+key OwnKey;
+integer done;
+// ****************************************************               
+// 2:         valid key, not NULL_KEY
+// 1 (TRUE):  NULL_KEY
+// 0 (FALSE): not a key 
+integer isKey(key in)
+{
+    if (in)
+        return 2;
+    return (in == NULL_KEY);
+}
+// ****************************************************               
+integer GetIntDesc(string Name){
+    list TableDesc=[" ","hips","handR","arms","RFleg","RHleg","handL","LHleg","neck","LFleg","PG","body"];
+    return llListFindList(TableDesc,[Name])+1;                    
+}
+// ****************************************************
+hideSystem(string msg){
+
+    list my_list = llParseString2List(msg,"_",""); 
+  //  llOwnerSay((string) my_list);
+    list my_Sublist;
+    integer i=llGetListLength(my_list)-1;
+    string SubMsg;
+    integer Hidelink;
+    vector SubFaceColor;
+    integer SubF;
+    float HideAlpha=llList2Float(my_list,i--);
+    for(;i>=0;i--){
+        SubMsg=llList2String(my_list,i);
+        my_Sublist=llParseString2List(SubMsg,":","");
+        Hidelink=GetIntDesc(llList2String(my_Sublist,0));
+        if ((Hidelink!=-1)&&(llGetListLength(my_Sublist)>0)){
+        
+            SubF= llGetLinkNumberOfSides(Hidelink)-1;
+            SubMsg=llList2String(my_Sublist,1);
+            if (SubMsg=="-1"){ 
+                    SubFaceColor=llList2Vector(llGetLinkPrimitiveParams(Hidelink,[PRIM_COLOR,0]),0);
+                    llSetLinkPrimitiveParamsFast(Hidelink,[PRIM_COLOR,ALL_SIDES,SubFaceColor,HideAlpha]);
+            }else{
+                for(;SubF>=0;SubF--){
+                    
+                    if (llSubStringIndex(SubMsg,(string)SubF)>=0){
+                        SubFaceColor=llList2Vector(llGetLinkPrimitiveParams(Hidelink,[PRIM_COLOR,SubF]),0);
+                        llSetLinkPrimitiveParamsFast(Hidelink,[PRIM_COLOR,SubF,SubFaceColor,HideAlpha]);
+                    }                
+                }
+           }
+        }        
+    }
+}
+integer KeyAdv(key KeySrg,string msg){
+    KeySrg=llGetOwnerKey(KeySrg);
+    integer idx=llSubStringIndex(msg,(string)OwnKey);
+    if (idx>0) OwnKey=KeySrg;
+    return (OwnKey==KeySrg);
+}
+// ********************
+list VectorNormalize(list params){
+        integer length = llGetListLength(params)-1;        
+        vector VPar;
+        string SubStr;
+        for (;length>0;length--){
+            SubStr=llList2String(params,length);
+            if (llSubStringIndex(SubStr,"<")>-1){ 
+                VPar=(vector)SubStr;
+                params=llListReplaceList(params,[VPar],length,length);
+             }
+        } 
+    return params;
+}
+// ********************
+SetParameter(string message){
+    list SSublist=llParseString2List(message,"/","");
+    integer i=llGetListLength(SSublist)-1;
+    list my_Sublist;
+    integer SubLink;
+    for(;i>0;i--){
+        my_Sublist=llParseString2List(llList2String(SSublist,i),":","");
+        SubLink=GetIntDesc(llList2String(my_Sublist,0));
+        if (!SubLink) return;
+        my_Sublist=llDeleteSubList(my_Sublist,0,0);
+        llSetLinkPrimitiveParamsFast(SubLink,VectorNormalize(my_Sublist));
+    }
+}
+// *************************************************
+default{
+    state_entry(){
+        OwnKey= llGetOwner();
+        llSetTimerEvent(1);
+        llListen(channel,"",NULL_KEY,"");
+        done=20;
+    }
+    changed(integer change){
+        if (change & CHANGED_OWNER){
+            llResetScript();
+        }
+    }    
+    run_time_permissions(integer perm){
+        string anim = "Kem-body-deform";
+        list anims = llGetAnimationList(OwnKey);
+        key check=llGetInventoryKey(anim);
+        if(llListFindList(anims, [check])){
+            if (!done) llSetTimerEvent(0);
+            done--;
+        }
+        if(perm){
+            llStartAnimation(anim);
+            llStartAnimation("Kem-hand-L-relax");
+            llStartAnimation("Kem-hand-R-relax");
+        }
+    }
+    listen(integer channel, string name, key id, string message){
+     // llOwnerSay(message);
+          if (KeyAdv(id,message)){
+            list Sublist=llParseString2List(message,"/","");        
+            string command=llList2String(Sublist,0);        
+            if (command=="Hand"){                
+                list HandAnim=["relax","hold","fist","point","horns"];
+                string Hand=llList2String(Sublist,1);
+                integer NumbHand=llList2Integer(Sublist,2);
+                Animation="Kem-hand-";                
+                if (Hand=="L"){
+                    if ((NumbHand>=0)&&(NumbHand<5)){
+                        if (indexHandL>0) llStopAnimation(Animation+Hand+"-"+llList2String(HandAnim,indexHandL));
+                        indexHandL=NumbHand;
+                        llStartAnimation(Animation+Hand+"-"+llList2String(HandAnim,indexHandL)); 
+                    }   
+                }else if (Hand=="R"){
+                    if ((NumbHand>=0)&&(NumbHand<5)){
+                        if (indexHandR>0) llStopAnimation(Animation+Hand+"-"+llList2String(HandAnim,indexHandR));
+                        indexHandR=NumbHand;
+                        llStartAnimation(Animation+Hand+"-"+llList2String(HandAnim,indexHandR)); 
+                    }   
+                }                
+            }else if (command=="Undeform"){
+                        llSetTimerEvent(0.5);
+                        done=20;
+            }else if (command=="FullColor"){
+                llSetLinkColor(LINK_SET,llList2Vector(Sublist,1),ALL_SIDES);                        
+            }else if (command=="SkinBody"){
+                key TxtKey=llList2Key(Sublist,1);
+                if (isKey(TxtKey)!=2)return;
+                llSetLinkTexture(LINK_SET,TxtKey,ALL_SIDES);
+            }else if (command=="MstSetPar"){
+                SetParameter(message);
+            }else{ 
+                hideSystem(message);
+            }
+        }
+    }
+    timer(){
+        llRequestPermissions(OwnKey, PERMISSION_TRIGGER_ANIMATION);
+    }    
+}
