@@ -1,0 +1,1136 @@
+ // EazyDoor v4.0.0
+// Copyright (C) 2010-2016 Zauber Paracelsus (also known as Zauber Exonar)
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version. 
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+
+//Name of the settings notecard
+string settingsCard = "! DOOR SETTINGS";
+list params_opened;
+list params_closed;
+float alpha_opened=1;
+float alpha_closed=1;
+
+integer NO_ROT;
+integer NO_POS;
+integer NO_SIZ;
+integer NO_ALPHA;
+integer NO_SLICE;
+integer NO_PARAMS;
+
+rotation openedRot;
+rotation closedRot;
+vector openedPos;
+vector closedPos;
+vector openedSize;
+vector closedSize;
+vector openedSlice;
+vector closedSlice;
+
+integer phantom_open;
+integer setup_chan;
+integer link_chan;
+integer line;
+integer locked;
+integer lockable;
+integer clickable = TRUE;
+float autoclose = 10;
+float delay_open;
+float delay_close;
+integer collide = TRUE;
+float slowOpen;
+
+integer openclose;
+key REQ_ID;
+key settingsKey;
+
+string bindKey;
+string bindKeyTemp;
+integer bindMode;
+list unboundCommands = ["Bind Door", "More", "Help", "Pairing", "Slow Open",
+"Custom", "Cancel", "Sounds", "Locking", "Unlocking", "Closing", "Opening",
+"ClosingEnd", "OpeningEnd", "Random"];
+
+//Sound effects.  Can be UUID or inventory name
+string opensound = "069c4ef0-2d56-445d-ad9f-8d257499f1a7";
+string closesound = "88e8d6c9-0492-4026-8a14-f8c34362eadc";
+string opensoundEnd;
+string closesoundEnd;
+string locksound = "b209165a-4575-41c3-b44c-b064bfff91d3";
+string unlocksound = "b209165a-4575-41c3-b44c-b064bfff91d3";
+
+string DELIMITER = "|";
+
+float GetSimPerf() {
+    return llGetRegionFPS() / 32.0;
+}
+
+integer RandomID() {
+    //If this won't compile, place double slashes ( // ) in front of it, then remove them from the line below it 
+    //integer i = iwIntRandRange(-2100000000, 2100000000);
+    integer i = (integer)llFrand(2100000000);
+    
+    if(i == 0) return RandomID();
+    return i;
+}
+
+integer HANDLE_COMMAND(integer channel, string command) {
+    if(channel == setup_chan) {
+        if(command == "Cancel" || command == " " || command == "Okay") return 0;
+        else if(command == " Clear") {
+            link_chan = 0;
+        }
+        else if(llStringLength(command) == 2 && llGetSubString(command,0,0) == " ") {
+            link_chan = (integer)llGetSubString(command,1,-1);
+            CONFIRM("Pairing ID set to " + (string)link_chan);
+        } else if (command == "More") {
+            llDialog(llGetOwner(), "Select an option:", ["Auto-Close", "Sounds", "Delay Open", "Delay Close"], setup_chan);
+        } else if (command == "Bind Door") {
+            if(llGetLinkNumber() <= 1) {
+                llOwnerSay("Bind Door cannot be used on unlinked doors.");
+                return 0;
+            }
+            llOwnerSay("Bind Door activated.  Click any other door that has EazyDoor in setup mode.  It will be bound to this door, and any menu options applied to one door will apply to both.  Click this door again to cancel binding.");
+            if(bindKey == "") bindKeyTemp = llGenerateKey();
+            else bindKeyTemp = bindKey;
+            bindMode = 1;
+            llMessageLinked(LINK_ALL_OTHERS, 0, "ACTIVATE BIND", bindKeyTemp);
+        } else if (command == "+More") {
+            string msg = "In local chat, enter this command, where X is the ID number of the door:\n\n";
+            msg += "/door setpair X\n\nSet X to 0 to disable pairing.  This command will be heard by all unconfigured doors nearby";
+            llDialog(llGetOwner(), msg, ["Okay"], 1);
+        } else if (command == "Auto-Close") {
+            list btns = [" ", "Custom", "Cancel", "20", "25", "30", "7.5", "10", "15", "0", "2.5", "5"];
+            llDialog(llGetOwner(), "Select how many seconds the door will wait before closing automatically, or Custom to enter an arbitrary time.  Zero will disable automatic closing.", btns, setup_chan+3);
+            /*
+            string msg = "In local chat, enter this command, where X is how many seconds before the door closes:\n\n";
+            msg += "/door autoclose X\n\nSet X to 0 to disable autoclose";
+            llDialog(llGetOwner(), msg, ["Okay"], 1);
+            */
+        } else if (command == "Delay Open") {
+            list btns = [" ", "Custom", "Cancel", "7.5", "10", "15", "2", "2.5", "5", "0.5", "1", "1.5"];
+            llDialog(llGetOwner(), "Select how many seconds the door will delay before it opens, or Custom to enter an arbitrary time.", btns, setup_chan+4);
+            /*
+            string msg = "In local chat, enter this command, where X is how many seconds before the door opens:\n\n";
+            msg += "/door delay-open X\n\nSet X to 0 to disable delayed open";
+            llDialog(llGetOwner(), msg, ["Okay"], 1);
+            */
+        } else if (command == "Delay Close") {
+            list btns = [" ", "Custom", "Cancel", "7.5", "10", "15", "2", "2.5", "5", "0.5", "1", "1.5"];
+            llDialog(llGetOwner(), "Select how many seconds the door will delay before it closes, or Custom to enter an arbitrary time.", btns, setup_chan+5);
+        } else if (command == "Sounds") {
+            DoorPrompt();
+        } else if (command == "Opened") {
+            params_opened = COLLECT_BASE_PARAMS();
+            CONFIRM("Opened parameters set!");
+        }
+        else if (command == "Closed") {
+            params_closed = COLLECT_BASE_PARAMS();
+            CONFIRM("Closed parameters set!");
+        }
+        else if (command == "Pairing") {
+            list btns = ["Clear", "Custom", "Cancel", " 7", " 8", "Random", " 4", " 5", " 6", " 1", " 2", " 3"];
+            llDialog(llGetOwner(), "Select a pairing ID number, or 'Custom' to enter an arbitrary ID number.", btns, setup_chan+2);
+        }
+        
+        else if(command == "+Phantom") {
+            phantom_open = TRUE;
+            CONFIRM("Door will turn phantom when opened");
+            if(collide == TRUE) llOwnerSay("Warning: It is not recommended to have both open on collision and phantom enabled at the same time");
+        } else if (command == "-Phantom") {
+            phantom_open = FALSE;
+            CONFIRM("Door will remain solid when opened");
+            llOwnerSay(">>"+(string)phantom_open+"<<");
+        }
+        
+        else if(command == "Slow Open") {
+            list btns = [" ", "Custom", "Cancel", "2.5", "3", "5", "1", "1.5", "2", "0", "0.25", "0.5"];
+            llDialog(llGetOwner(), "Select how many seconds you wish for the door to take to open, or 'Custom' to enter an arbitrary amount.", btns, setup_chan+1);
+            //llTextBox(llGetOwner(), "Enter how many seconds you wish for the door to take to open.  If you see no text entry, instead enter the desired amount on channel " + (string)(setup_chan-1), setup_chan-1);
+        }
+        
+        else if(command == "+Collision") {
+            collide = TRUE;
+            CONFIRM("Door will open on collisions");
+            if(phantom_open == TRUE) llOwnerSay("Warning: It is not recommended to have both open on collision and phantom enabled at the same time");
+        } else if (command == "-Collision") {
+            collide = FALSE;
+            CONFIRM("Door will ignore collisions");
+        }
+        
+        else if(command == "+Locking") {
+            lockable = TRUE;
+            CONFIRM("Door can be locked");
+        } else if (command == "-Locking") {
+            lockable = FALSE;
+            CONFIRM("Door cannot be locked");
+        }
+        
+        else if(command == "+Clickable") {
+            clickable = TRUE;
+            CONFIRM("Door can be opened with clicking");
+        } else if (command == "-Clickable") {
+            clickable = FALSE;
+            CONFIRM("Door cannot be opened by clicking");
+        }
+        
+        else if(command == "Help") {
+            sayHelp();
+        }
+        
+        else if (command == "-+Finish+-") {
+            integer result = FINISH_SETUP();
+            if(result == 1) {
+                llSay(0, "Configuration Ready!");
+                if(llGetInventoryType(settingsCard) == INVENTORY_NONE) {
+                    openedPos = llList2Vector(params_opened,0);
+                    openedRot = llList2Rot(params_opened,1);
+                    openedSize = llList2Vector(params_opened,2);
+                    alpha_opened = llList2Float(params_opened,3);
+                    params_opened = llList2List(params_opened,4,-1);
+                    closedPos = llList2Vector(params_closed,0);
+                    closedRot = llList2Rot(params_closed,1);
+                    closedSize = llList2Vector(params_closed,2);
+                    alpha_closed = llList2Float(params_closed,3);
+                    params_closed = llList2List(params_closed,4,-1);
+                    return 1;
+                }
+                return 2;
+            } else if (result == 0) {
+                llSay(0, "ERROR: opened and closed data must both be set!"); 
+            } else if (result == -1) {
+                llSay(0, "ERROR: opened and closed data are identical!");
+            }
+        }
+    } else if (channel == setup_chan+1) {
+        if (command == "Custom") {
+            llTextBox(llGetOwner(), "Enter how many seconds you wish for the door to take to open.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+1), setup_chan+1);
+        }
+        else if(command != " " && command != "Cancel") {
+            slowOpen = (float)command;
+            if(slowOpen < 0) slowOpen = 0;
+            
+            if(slowOpen!=0) CONFIRM("Door will open gradually over " + (string)slowOpen + " seconds instead of instantly");
+            else CONFIRM("Door will open instantly.");
+        }
+    } else if (channel == setup_chan+2) {
+        if(command == "Cancel") return 0;
+        if(command == "Random") {
+            link_chan = RandomID();
+            llOwnerSay("Generating random pairing ID...");
+            llMessageLinked(LINK_ALL_OTHERS, link_chan, "RANDOM PAIR ID", "");
+            llSetTimerEvent(1 + (1 - GetSimPerf()));
+        }
+        else if(command == "Custom") {
+            llTextBox(llGetOwner(), "Enter the desired pairing ID number.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+2), setup_chan+2);
+        }
+        else if(command == "Clear" || (integer)command == 0) {
+            link_chan = 0;
+            CONFIRM("Pairing ID cleared");
+        }
+        else if(command != "Cancel") {
+            link_chan = (integer)command;
+            CONFIRM("Pairing ID set to " + (string)link_chan);
+        }
+    } else if (channel == setup_chan+3) {
+        if(command == "Custom") {
+            llTextBox(llGetOwner(), "Enter how many seconds you wish for the door to wait before automatically closing.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+3), setup_chan+3);
+        } else if(command != " " && command != "Cancel") {
+            autoclose = (float)command;
+            if(autoclose < 0) autoclose = 0;
+            
+            if(autoclose!=0) CONFIRM("Door will automatically close after " + (string)autoclose + " seconds.");
+            else CONFIRM("Door will not automatically close.");
+        }
+    } else if (channel == setup_chan+4) {
+        if(command == "Custom") {
+            llTextBox(llGetOwner(), "Enter how many seconds you wish for the door to delay before opening.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+4), setup_chan+4);
+        } else if(command != " " && command != "Cancel") {
+            delay_open = (float)command;
+            if(delay_open < 0) delay_open = 0;
+            
+            if(delay_open!=0) CONFIRM("Door will wait " + (string)delay_open + " seconds before opening.");
+            else CONFIRM("Door will not wait before opening.");
+        }
+    } else if (channel == setup_chan+5) {
+        if(command == "Custom") {
+            llTextBox(llGetOwner(), "Enter how many seconds you wish for the door to delay before closing.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+5), setup_chan+5);
+        } else if(command != " " && command != "Cancel") {
+            delay_close = (float)command;
+            if(delay_close < 0) delay_close = 0;
+            
+            if(delay_close!=0) CONFIRM("Door will wait " + (string)delay_close + " seconds before closing.");
+            else CONFIRM("Door will not wait before closing.");
+        }
+    }
+    
+    else if(channel == setup_chan+10) {
+        if(command == "Auto") {
+            llOwnerSay("Searching for sound files named Open, Close, Lock, and Unlock");
+            integer found;
+            string s = FindItemCaseInsensitive("open",INVENTORY_SOUND);
+            if(s) {
+                opensound = s; found++;
+                llOwnerSay("Opening sound set!");
+            }
+            
+            s = FindItemCaseInsensitive("close",INVENTORY_SOUND);
+            if(s) {
+                closesound = s; found++;
+                llOwnerSay("Closing sound set!");
+            }
+            
+            s = FindItemCaseInsensitive("open_end", INVENTORY_SOUND);
+            if(s) {
+                opensoundEnd = s; found++;
+                llOwnerSay("Opening end sound set!");
+            }
+            
+            s = FindItemCaseInsensitive("close_end", INVENTORY_SOUND);
+            if(s) {
+                closesoundEnd = s; found++;
+                llOwnerSay("Closing end sound set!");
+            }
+            
+            s = FindItemCaseInsensitive("lock",INVENTORY_SOUND);
+            if(s) {
+                locksound = s; found++;
+                llOwnerSay("Locking sound set!");
+            }
+            
+            s = FindItemCaseInsensitive("unlock",INVENTORY_SOUND);
+            if(s) {
+                unlocksound = s; found++;
+                llOwnerSay("Unlocking sound set!");
+            }
+            
+            CONFIRM("Found " + (string)found + " sounds to use!");
+        } else if(command == "Opening") {
+            llTextBox(llGetOwner(), "Enter the name or UUID of a sound to use for opening the door.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+11), setup_chan+11);
+        } else if(command == "Closing") {
+            llTextBox(llGetOwner(), "Enter the name or UUID of a sound to use for closing the door.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+12), setup_chan+12);                
+        } else if(command == "Locking") {
+            llTextBox(llGetOwner(), "Enter the name or UUID of a sound to use for locking the door.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+13), setup_chan+13);
+        } else if(command == "Unlocking") {
+            llTextBox(llGetOwner(), "Enter the name or UUID of a sound to use for unlocking the door.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+14), setup_chan+14);
+        } else if(command == "OpeningEnd") {
+            llTextBox(llGetOwner(), "Enter the name or UUID of a sound to play when the door finishes opening.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+15), setup_chan+15);
+        } else if(command == "ClosingEnd") {
+            llTextBox(llGetOwner(), "Enter the name or UUID of a sound to play when the door finishes closing.  If you see no text entry box, instead enter the desired amount on channel " + (string)(setup_chan+16), setup_chan+16);
+        }
+    }
+    else if(channel == setup_chan+11) {
+        opensound = command;
+        CONFIRM("Opening sound set to " + command);
+        DoorPrompt();
+    }else if(channel == setup_chan+12) {
+        closesound = command;
+        CONFIRM("Closing sound set to " + command);
+        DoorPrompt();
+    }else if(channel == setup_chan+13) {
+        locksound = command;
+        CONFIRM("Locking sound set to " + command);
+        DoorPrompt();
+    }else if(channel == setup_chan+14) {
+        unlocksound = command;
+        CONFIRM("Unlocking sound set to " + command);
+        DoorPrompt();
+    }else if(channel == setup_chan+15) {
+        opensoundEnd = command;
+        CONFIRM("Opening end sound set to " + command);
+        DoorPrompt();
+    }else if(channel == setup_chan+16) {
+        closesoundEnd = command;
+        CONFIRM("Closing end sound set to " + command);
+        DoorPrompt();
+    }
+    
+    if(channel != 0) return 0;
+    if(llGetSubString(command, 0, 4) != "/door") return 0;
+    if(command == "/door help") {
+        sayHelp();
+    } else if (command == "/door opened") {
+        params_opened = COLLECT_BASE_PARAMS();
+        CONFIRM("Opened parameters set!");
+    } else if (command == "/door closed") {
+        params_closed = COLLECT_BASE_PARAMS();
+        CONFIRM("Closed parameters set!");
+    } else if (llSubStringIndex(command, "/door locking") != -1) {
+        if(llGetSubString(command, -3, -1) == "YES") {lockable=TRUE;CONFIRM("Locking enabled!");}
+        else if(llGetSubString(command, -2, -1) == "NO") {lockable=FALSE;CONFIRM("Locking disabled!");}
+    } else if (llSubStringIndex(command, "/door collide") != -1) {
+        if(llGetSubString(command, -3, -1) == "YES") {collide=TRUE;CONFIRM("Open on collision enabled!");}
+        else if(llGetSubString(command, -2, -1) == "NO") {collide=FALSE;CONFIRM("Open on collision disabled!");}
+    } else if (llSubStringIndex(command, "/door phantom") != -1) {
+        if(llGetSubString(command, -3, -1) == "YES") {phantom_open=TRUE;CONFIRM("Door will turn phantom when opened.");}
+        else if(llGetSubString(command, -2, -1) == "NO") {phantom_open=FALSE;CONFIRM("Door will stay solid when opened");}
+    } else if(llSubStringIndex(command, "/door autoclose") != -1) {
+        autoclose = (integer)llList2String(llParseString2List(command, [" "], []), -1);
+        if(autoclose < 0) autoclose=0;
+        if(autoclose <= 0) CONFIRM("Autoclose disabled!");
+        else CONFIRM("Autoclose enabled, set to " + (string)autoclose + " seconds!");
+    } else if(llSubStringIndex(command, "/door delay-open") != -1) {
+        delay_open = (integer)llList2String(llParseString2List(command, [" "], []), -1);
+        if(delay_open < 0) delay_open=0;
+        if(delay_open <= 0) CONFIRM("Delay open disabled!");
+        else CONFIRM("Delay open enabled, set to " + (string)delay_open + " seconds!");
+    } else if(llSubStringIndex(command, "/door delay-close") != -1) {
+        delay_close = (integer)llList2String(llParseString2List(command, [" "], []), -1);
+        if(delay_close < 0) delay_close=0;
+        if(delay_close <= 0) CONFIRM("Delay close disabled!");
+        else CONFIRM("Delay close enabled, set to " + (string)delay_close + " seconds!");
+    } else if (llSubStringIndex(command, "/door setpair") != -1) {
+        link_chan = (integer)llList2String(llParseString2List(command, [","], []), 1);
+    } else if(llSubStringIndex(command, "/doorsound") != -1) {
+        list temp = llParseString2List(command, [" "], []);
+        string opt = llList2String(temp, 1);
+        string sound = llList2String(temp, 2);
+             if(opt ==      "open")     {opensound = sound;CONFIRM("Opening sound set to " + sound);}
+        else if(opt ==     "close")    {closesound = sound;CONFIRM("Closing sound set to " + sound);}
+        else if(opt ==  "open_end")  {opensoundEnd = sound;CONFIRM("Opening end sound set to " + sound);}
+        else if(opt == "close_end") {closesoundEnd = sound;CONFIRM("Closing end sound set to " + sound);} 
+        else if(opt ==      "lock")     {locksound = sound;CONFIRM("Locking sound set to " + sound);}
+        else if(opt ==    "unlock")   {unlocksound = sound;CONFIRM("Unlocking sound set to " + sound);}
+    }
+    return 0;
+}
+
+//Casts a float into a string and makes it as small as possible.
+string COMPRESS_FLOAT(float input) {
+    //If the float's value remains unchanged as an integer, return the integer value.
+    if((integer)input==input) return (string)((integer)input);
+    
+    string dat = (string)input;
+    integer i;
+    while(TRUE) {
+        string last = llGetSubString(dat, -1, -1);
+        if(last == "0") dat = llGetSubString(dat, 0, -2);
+        else {
+            if (last == ".") dat = llGetSubString(dat, 0, -2);
+            jump compress_float_exit;
+        }
+    }
+    @compress_float_exit;
+    //If the float is positive and less than 1, chop off the zero at the front.  Phlox will cast it back into a float correctly.
+    if(llGetSubString(dat,0,1) == "0.") return llGetSubString(dat,1,-1);
+    else return dat;
+}
+
+//Converts a vector into a string, compressed for size.
+string COMPRESS_VECTOR(vector input) {
+    //Phlox casts strings to ZERO_VECTOR if it can't understand them.
+    if(input == ZERO_VECTOR) return "0";
+    list temp = [COMPRESS_FLOAT(input.x), COMPRESS_FLOAT(input.y), COMPRESS_FLOAT(input.z)];
+    //returns the vector as a comma-separate list with no spaces.  Phlox understands comma-seperated lists when casting strings to vectors.
+    return llDumpList2String(temp,",");
+}
+
+//Converts a rotation into a string, compressed for size.
+string COMPRESS_ROTATION(rotation input) {
+    //Phlox casts strings to ZERO_ROTATION if it can't understand them.
+    if(input == ZERO_ROTATION) return "0";
+    list temp = [COMPRESS_FLOAT(input.x), COMPRESS_FLOAT(input.y), COMPRESS_FLOAT(input.z), COMPRESS_FLOAT(input.s)];
+    //returns the rotations as a comma-separate list with no spaces.  Phlox understands comma-seperated lists when casting strings to rotations.
+    return llDumpList2String(temp,",");
+}
+
+//Converts a list of data into a serialized string.
+string SerializeList(list data) {
+    list result;
+    integer i = 0;
+    integer type;
+    integer len = llGetListLength(data);
+    for(i=0;i<len;i++) {
+        type = llGetListEntryType(data, i);
+        if(type == TYPE_FLOAT) {
+            result += "a"+COMPRESS_FLOAT(llList2Float(data, i));
+        } else if(type == TYPE_VECTOR) {
+            result += "b"+COMPRESS_VECTOR(llList2Vector(data, i));
+        } else if(type == TYPE_ROTATION) {
+            result += "c"+COMPRESS_ROTATION(llList2Rot(data, i));
+        } else if(type == TYPE_INTEGER) {
+            result += "d"+(string)llList2Integer(data, i);
+        } else if(type == TYPE_KEY) {
+            result += "e"+(string)llList2Key(data, i);
+        } else if(type == TYPE_STRING) {
+            result += "f"+llList2String(data, i);
+        }
+    }
+    return llDumpList2String(result, DELIMITER);
+}
+
+//Converts a serialized list back into a normal list.
+list UnserializeList(string data) {
+    list result;
+    list records = llParseString2List(data, [DELIMITER], []);
+    integer i;
+    integer len = llGetListLength(records);
+    integer type;
+    for(i=0;i<len;i++) {
+        string field = llList2String(records, i);
+        string first = llGetSubString(field,0,0);
+        integer single = (llStringLength(field)==1);
+             if(first=="a") result += [(float)llGetSubString(field,1,-1)];
+        else if(first=="b") result += [(vector)llGetSubString(field,1,-1)];
+        else if(first=="c") result += [(rotation)llGetSubString(field,1,-1)];
+        else if(first=="d") result += [(integer)llGetSubString(field,1,-1)];
+        else if(first=="e") {
+            if(single) result += [(key)("")];
+            else result += [(key)llGetSubString(field,1,-1)];
+        } else if(first=="f") {
+            if(single) result += [""];
+            else result += [llGetSubString(field,1,-1)];
+        }
+    }
+    
+    return result;
+}
+
+
+// Released into public domain. By Nexii Malthus.
+rotation rLin(rotation x, rotation y, float t) {
+    float ang = llAngleBetween(x, y);
+    if(ang > PI) ang -= TWO_PI;
+    return x * llAxisAngle2Rot(llRot2Axis(y/x)*x, ang*t);
+}
+
+omega_transition(rotation r1, rotation r2) {
+    integer physics = llList2Integer(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE]),0);
+    llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE, PRIM_PHYSICS_SHAPE_NONE]);
+    
+    //based somewhat on code by Acheron Gloom
+    rotation Temp = r2 / r1;
+    vector v3 = llRot2Axis(Temp);
+    float speed = PI / slowOpen;
+    
+    llTargetOmega(v3, speed * 0.575, 1.0);
+    llSleep(slowOpen);
+    llTargetOmega(ZERO_VECTOR, 0, 0);
+    
+    llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE, physics, PRIM_ROT_LOCAL, r2]);
+}
+
+
+//Gradually opens or closes the door
+transition(list target, float alpha) {
+    integer physics = llList2Integer(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE]),0);
+    llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE, PRIM_PHYSICS_SHAPE_NONE]);
+    list base_params;
+    integer USE_FULL_FRAMES;
+    
+    if(!NO_POS) {
+        base_params += [PRIM_POSITION, llGetLocalPos()];
+        if(llVecDist(llList2Vector(target,1), llGetLocalPos()) > 0.5) USE_FULL_FRAMES += 1;
+    }
+    if(!NO_ROT) {
+        base_params += [PRIM_ROT_LOCAL, llGetLocalRot()];
+        if(llAngleBetween(llList2Rot(target,llGetListLength(base_params)+1),llGetLocalRot())) {
+            USE_FULL_FRAMES += 1;
+        }
+    }
+    if(!NO_SIZ) {
+        base_params += [PRIM_SIZE, llGetScale()];
+        USE_FULL_FRAMES += 1;
+    }
+    if(!NO_SLICE) {
+        base_params += [PRIM_SLICE] + llGetPrimitiveParams([PRIM_SLICE]);
+        USE_FULL_FRAMES += 1;
+    }
+    if(!NO_PARAMS && llList2Integer(params_closed,0) == llList2Integer(params_opened, 0)) {
+        base_params += [PRIM_TYPE] + llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TYPE]);
+        USE_FULL_FRAMES += 1;
+    }
+    float base_alpha=1;
+    float incAlpha;
+    integer frameCount = 24;
+    if(!USE_FULL_FRAMES) frameCount = 12;
+    float frameTime = 1.0 / frameCount;
+    frameCount = (integer)(slowOpen * frameCount);
+    if(!NO_ALPHA) {
+        base_alpha = llList2Float(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_COLOR, 0]), 1);
+        incAlpha = (alpha - base_alpha) / frameCount;
+    }
+    
+    integer iter = 1;
+    integer i;
+    integer len = llGetListLength(base_params);
+    list increments;
+    for(i=0; i<len; i++) {
+        integer type = llGetListEntryType(base_params, i);
+        if(type == TYPE_INTEGER) {
+            integer a = llList2Integer(base_params, i);
+            integer b = llList2Integer(target, i);
+            if(a == b) increments += [0];
+            else increments += [(b - a) / frameCount];
+        } else if (type == TYPE_FLOAT) {
+            float a = llList2Float(base_params, i);
+            float b = llList2Float(target, i);
+            if(a == b) increments += [0.0];
+            else increments += [(b - a) / frameCount];
+        } else if (type == TYPE_VECTOR) {
+            vector a = llList2Vector(base_params, i);
+            vector b = llList2Vector(target, i);
+            if(a == b) increments += [ZERO_VECTOR];
+            else increments += [(b - a) / frameCount];
+        } else if (type == TYPE_ROTATION) {
+            increments += llList2Rot(base_params, i);
+        } else {
+            increments += [""];
+        }
+    }
+    
+    while(iter++ < frameCount) {
+        list params;
+        for(i=0; i<len; i++) {
+            integer type = llGetListEntryType(increments, i);
+            if(type == TYPE_INTEGER) {
+                params += llList2Integer(base_params,i) + (llList2Integer(increments,i) * iter);
+            } else if (type == TYPE_FLOAT) {
+                params += llList2Float(base_params,i) + (llList2Float(increments,i) * iter);
+            } else if (type == TYPE_VECTOR) {
+                params += llList2Vector(base_params,i) + (llList2Vector(increments,i) * iter);
+            } else if (type == TYPE_ROTATION) {
+                rotation iRot = llList2Rot(increments,i);
+                params += rLin(iRot, llList2Rot(target,i), (1.0 / frameCount) * iter);
+            } else {
+                params += llList2List(target, i, i);
+            }
+        }
+        llSetLinkPrimitiveParamsFast(LINK_THIS, params);
+        if(!NO_ALPHA) llSetLinkAlpha(LINK_THIS, base_alpha + (incAlpha * iter), ALL_SIDES);
+        llSleep(frameTime);
+    }
+    llSetLinkPrimitiveParamsFast(LINK_THIS, target);
+    if(!NO_ALPHA) llSetLinkAlpha(LINK_THIS, alpha, ALL_SIDES);
+    llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE, physics]);
+}
+
+//Closes the door
+close() {
+    if(delay_close > 0) llSleep(delay_close);
+    openclose = FALSE;
+    list params;
+    if(!NO_POS) params += [PRIM_POSITION, closedPos];
+    if(!NO_ROT) params += [PRIM_ROT_LOCAL, closedRot];
+    if(!NO_SIZ) params += [PRIM_SIZE, closedSize];
+    if(!NO_SLICE) params += [PRIM_SLICE, closedSlice];
+    if(useOmega) {
+        llTriggerSound(closesound, 1.0);
+        omega_transition(openedRot, closedRot);
+        llTriggerSound(closesoundEnd, 1.0);
+    } else if(slowOpen==0) {
+        if(!NO_PARAMS) params += [PRIM_TYPE] + params_closed;
+        llSetLinkPrimitiveParamsFast(LINK_THIS, params);
+        if(!NO_ALPHA) llSetAlpha(alpha_closed, ALL_SIDES); 
+        llTriggerSound(closesound, 1.0);
+    } else {
+        if(!NO_PARAMS && llList2Integer(params_closed,0) == llList2Integer(params_opened, 0)) {
+            params += [PRIM_TYPE] + params_closed;
+        }
+        llTriggerSound(closesound, 1.0);
+        transition(params, alpha_closed);
+        llTriggerSound(closesoundEnd, 1.0);
+    }
+    if(phantom_open) llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE, PRIM_PHYSICS_SHAPE_PRIM]);
+    llSetTimerEvent(0);
+}
+
+//Opens the door
+open() {
+    if(delay_open > 0) llSleep(delay_open);
+    openclose = TRUE;
+    list params;
+    if(!NO_POS) params += [PRIM_POSITION, openedPos];
+    if(!NO_ROT) params += [PRIM_ROT_LOCAL, openedRot];
+    if(!NO_SIZ) params += [PRIM_SIZE, openedSize];
+    if(!NO_SLICE) params += [PRIM_SLICE, openedSlice];
+    if(useOmega) {
+        llTriggerSound(opensound, 1.0);
+        omega_transition(closedRot, openedRot);
+        llTriggerSound(opensoundEnd, 1.0);
+    } else if(slowOpen==0) {
+        if(!NO_PARAMS) params += [PRIM_TYPE] + params_opened;
+        llSetLinkPrimitiveParamsFast(LINK_THIS, params);
+        if(!NO_ALPHA) llSetAlpha(alpha_opened, ALL_SIDES); 
+        llTriggerSound(opensound, 1.0);
+    } else {
+        if(!NO_PARAMS && llList2Integer(params_closed,0) == llList2Integer(params_opened, 0)) {
+            params += [PRIM_TYPE] + params_opened;
+        }
+        llTriggerSound(opensound, 1.0);
+        transition(params, alpha_opened);
+        llTriggerSound(opensoundEnd, 1.0);
+    }
+    if(phantom_open) llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_PHYSICS_SHAPE_TYPE, PRIM_PHYSICS_SHAPE_NONE]);
+    llSetTimerEvent(autoclose);
+}
+
+//Opens the door if closed, closes it if opened
+toggle() {
+    if(openclose) {        
+        if(link_chan) llMessageLinked(LINK_ALL_OTHERS, link_chan, "C", NULL_KEY);
+        close();
+    } else {
+        if(link_chan) llMessageLinked(LINK_ALL_OTHERS, link_chan, "O", NULL_KEY);
+        open();
+    }
+}
+
+//Help instructions during configuration mode.
+sayHelp() {
+    llLoadURL(llGetOwner(), "Open the following link for an online copy of the instructions!", "https://zauberparacelsus.xyz/pd/eazydoor");
+}
+
+CONFIRM(string text) {
+    llOwnerSay(text);
+    //llPlaySound("65f7ecb5-b71c-427d-af1e-97627e827716", 1.0);
+    llTriggerSound("b9b62e25-bf92-47f7-807d-91cef22c0986", 1.0);
+}
+
+list COLLECT_BASE_PARAMS() {
+    list temp = [llGetLocalPos(), llGetLocalRot(), llGetScale()];
+    temp += [llList2Float(llGetLinkPrimitiveParams(LINK_THIS, [PRIM_COLOR, 0]), 1)];
+    temp += llGetLinkPrimitiveParams(LINK_THIS, [PRIM_SLICE]);
+    temp += llGetLinkPrimitiveParams(LINK_THIS, [PRIM_TYPE]);
+    return temp;
+}
+
+integer LIST_COMPARE(list a, list b) {
+    if(a != b) return FALSE;
+    return llList2CSV(a) == llList2CSV(b);  
+}
+
+integer FINISH_SETUP() {
+    if((params_opened == [] || params_closed == [])  && phantom_open == FALSE) return 0;
+    else if (LIST_COMPARE(params_opened, params_closed)) {
+        if(!phantom_open) return -1;
+    }
+    CONFIRM("Writing configuration data...");
+    list data = [];
+    list t1;
+    list t2;
+    
+    //Add position data
+    if(llList2Vector(params_opened,0) != llList2Vector(params_closed,0)) {
+        t1 += ["OPENED_POS=" + llList2String(params_opened,0)];
+        t2 += ["CLOSED_POS=" + llList2String(params_closed,0)];
+    }
+    
+    //Add rotation data
+    if(llList2Rot(params_opened,1) != llList2Rot(params_closed,1)) {
+        t1 += ["OPENED_ROT=" + llList2String(params_opened,1)];
+        t2 += ["CLOSED_ROT=" + llList2String(params_closed,1)];
+    }
+    
+    //Add scaling data
+    if(llList2Vector(params_opened,2) != llList2Vector(params_closed,2)) {
+        t1 += ["OPENED_SIZ=" + llList2String(params_opened,2)];
+        t2 += ["CLOSED_SIZ=" + llList2String(params_closed,2)];
+    }
+    
+    //Add alpha data
+    if(llList2Float(params_opened,3) != llList2Float(params_closed,3)) {
+        t1 += ["OPENED_ALPHA=" + llList2String(params_opened,3)];
+        t2 += ["CLOSED_ALPHA=" + llList2String(params_closed,3)];
+    }
+    
+    if(llList2Vector(params_opened,4) != llList2Vector(params_closed,4)) {
+        t1 += ["OPENED_SLICE=" + llList2String(params_opened,4)];
+        t2 += ["CLOSED_SLICE=" + llList2String(params_closed,4)];
+    }
+    
+    //Add prim params data
+    list tO = llList2List(params_opened, 5, -1);
+    list tC = llList2List(params_closed, 5, -1);
+    if(!LIST_COMPARE(tC, tO)) {
+        t1 += ["OPENED_PARAM=" + SerializeList(tO)];
+        t2 += ["CLOSED_PARAM=" + SerializeList(tC)];
+    }
+    
+    data = t1 + [""] + t2;
+    
+    //Add other data
+    data += ["", "PAIRED_DOOR=" + (string)link_chan];
+    data += ["PHANTOM_ON_OPEN=" + (string)phantom_open];
+    data += ["AUTOCLOSE=" + (string)autoclose];
+    data += ["DELAY_OPEN=" + (string)delay_open];
+    data += ["DELAY_CLOSE=" + (string)delay_close];
+    data += ["ALLOW_COLLIDE=" + (string)collide];
+    data += ["ALLOW_CLICKING=" + (string)clickable];
+    data += ["LOCKABLE=" + (string)lockable];
+    data += ["SLOW_OPEN=" + (string)slowOpen];
+    
+    //Add sound data
+    data += ["\n", "OPENSOUND="+opensound];
+    data += ["CLOSESOUND="+closesound];
+    data += ["OPENSOUNDEND="+opensoundEnd];
+    data += ["CLOSESOUNDEND="+closesoundEnd];
+    data += ["LOCKSOUND="+locksound];
+    data += ["UNLOCKSOUND="+unlocksound];
+    
+    if(llGetInventoryType(settingsCard) != INVENTORY_NONE) llRemoveInventory(settingsCard);
+    
+    //Change iwMakeNotecard to osMakeNotecard to make EazyDoor function on OpenSim grids.
+    //Remove iwMakeNotecard/osMakeNotecard to make EazyDoor function in Second Life.
+    //Note that removing it means that the setup will be lost if the script is ever reset. 
+    osMakeNotecard(settingsCard, data);
+    return TRUE;
+}
+
+//Generates a channel based on UUID
+integer GET_CHANNEL() {
+    integer cchan;
+    string input = llGetKey();
+    while(cchan < 100000) {
+        input = llMD5String(input,llGetLinkNumber());
+        cchan = (integer)("0x" + llGetSubString(input, 0, 7));
+    }
+    return cchan;
+}
+
+string PlusMinusOpt(string input, integer bool) {
+    if(bool != TRUE) return "+" + input;
+    else return "-" + input;
+}
+
+integer useOmega;
+integer CheckUseOmega() {
+    if(slowOpen <= 0) return FALSE;
+    if(NO_ROT) return FALSE;
+    if(!(NO_POS && NO_SIZ && NO_SLICE && NO_ALPHA && NO_PARAMS)) return FALSE;
+    
+    /*
+    vector v1 = llRot2Euler(closedRot) * RAD_TO_DEG;
+    vector v2 = llRot2Euler(openedRot) * RAD_TO_DEG;
+    vector v3 = v2 - v1;
+    
+    if(!(
+        (v3.x != 0 && v3.y == 0 && v3.z == 0) ||
+        (v3.x == 0 && v3.y != 0 && v3.z == 0) ||
+        (v3.x == 0 && v3.y == 0 && v3.z != 0)
+    )) return FALSE; 
+    */
+    
+    return TRUE;
+}
+
+FINALIZE_LOADING() {
+    if(openedRot == closedRot) NO_ROT=TRUE;
+    if(openedPos == closedPos) NO_POS=TRUE;
+    if(openedSize == closedSize) NO_SIZ=TRUE;
+    if(openedSlice == closedSlice) NO_SLICE=TRUE;
+    if(alpha_closed == alpha_opened) NO_ALPHA=TRUE;
+    if(LIST_COMPARE(params_closed, params_opened)) NO_PARAMS=TRUE;
+    if(NO_ROT && NO_POS && NO_SIZ && NO_ALPHA && NO_SLICE && NO_PARAMS) {
+        if(!phantom_open) {
+            llOwnerSay("ERROR: Opened and closed properties are identical, the door will not function properly!  Please delete the configuration notecard, reset the script, and reconfigure it.");
+        }
+    }
+}
+
+string FindItemCaseInsensitive(string item, integer item_type) {
+    item = llToLower(item);
+    integer len = llGetInventoryNumber(item_type);
+    integer i;
+    for(i = 0; i < len; i++) {
+        string name = llGetInventoryName(item_type, i);
+        if(llToLower(name) == item) return llGetInventoryKey(name);
+    }
+    return "";
+}
+
+DoorPrompt() {
+    list btns = [" ", "Auto", "Cancel", " ", "ClosingEnd", "OpeningEnd", " ", "Closing", "Opening", " ", "Locking", "Unlocking"];
+    llDialog(llGetOwner(), "Select which sound you wish to set, or 'Auto' to automatically use sounds within the prim contents.", btns, setup_chan+10);
+}
+
+//Default state.
+default {
+    state_entry() {
+        //Disable script if it is in a box
+        if(llGetObjectDesc() == "<disable>") return;
+        //Detects if configuration notecard is present.
+        //Loads data if it is present, goes to configuration mode if it isn't
+        if(llGetLinkNumber() < 2) {
+            llOwnerSay("WARNING:  This script is only intended for linked doors, and may not function properly in unlinked prims or as the root prim of a build.");
+        }
+        if(llGetInventoryType(settingsCard) != INVENTORY_NOTECARD) {
+            state setup;
+        } else {
+            line = 0;
+            settingsKey = llGetInventoryKey(settingsCard);
+            REQ_ID = llGetNotecardLine(settingsCard, line);
+            //llSetTimerEvent(0.1);
+        }
+    }
+    
+    timer() {
+        REQ_ID = llGetNotecardLine(settingsCard, line);
+    }
+    
+    dataserver(key query, string record) {
+        if(query != REQ_ID) return;
+        llSetTimerEvent(0.1);
+        if(record == EOF) {
+            llSay(0, "Finished Loading...");
+            FINALIZE_LOADING();
+            state ready;
+        } else {
+            list data = llParseString2List(record, ["="], []);
+            string field = llList2String(data, 0);
+            string data2 = llList2String(data, 1);
+                 if(field == "OPENED_ROT")         openedRot = (rotation)data2;
+            else if(field == "OPENED_POS")         openedPos =   (vector)data2;
+            else if(field == "OPENED_SIZ")        openedSize =   (vector)data2;
+            else if(field == "OPENED_ALPHA")    alpha_opened =    (float)data2;
+            else if(field == "OPENED_SLICE")     openedSlice =   (vector)data2;
+            else if(field == "OPENED_PARAM")   params_opened = UnserializeList(data2);
+            else if(field == "CLOSED_ROT")         closedRot = (rotation)data2;
+            else if(field == "CLOSED_POS")         closedPos =   (vector)data2;
+            else if(field == "CLOSED_SIZ")        closedSize =   (vector)data2;
+            else if(field == "CLOSED_ALPHA")    alpha_closed =    (float)data2;
+            else if(field == "CLOSED_SLICE")     closedSlice =   (vector)data2;
+            else if(field == "CLOSED_PARAM")   params_closed = UnserializeList(data2);
+            else if(field == "PAIRED_DOOR")        link_chan =  (integer)data2;
+            else if(field == "PHANTOM_ON_OPEN") phantom_open =  (integer)data2;
+            else if(field == "LOCKABLE") {
+                lockable =  (integer)data2;
+                if(lockable) locked = TRUE; //locked by default
+            }
+            else if(field == "AUTOCLOSE")          autoclose =  (integer)data2;
+            else if(field == "DELAY_OPEN")        delay_open =    (float)data2;
+            else if(field == "DELAY_CLOSE")      delay_close =    (float)data2;
+            else if(field == "OPENSOUND")          opensound =      (key)data2;
+            else if(field == "CLOSESOUND")        closesound =      (key)data2;
+            else if(field == "OPENSOUNDEND")    opensoundEnd =      (key)data2;
+            else if(field == "CLOSESOUNDEND")  closesoundEnd =      (key)data2;
+            else if(field == "LOCKSOUND")          locksound =      (key)data2;
+            else if(field == "UNLOCKSOUND")      unlocksound =      (key)data2;
+            else if(field == "ALLOW_COLLIDE")        collide =  (integer)data2;
+            else if(field == "ALLOW_CLICKING")     clickable =  (integer)data2;
+            else if(field == "SLOW_OPEN")           slowOpen =    (float)data2;
+            line++;
+            REQ_ID = llGetNotecardLine(settingsCard, line);            
+        }
+    }
+}
+
+//Configuration mode
+state setup {
+    state_entry() {
+        llSay(0, "Configuration notecard not found.  Beginning setup...");
+        llSay(0, "Click the door for options or help.");
+        llListen(0, llKey2Name(llGetOwner()), llGetOwner(), "");
+        setup_chan = GET_CHANNEL();
+        llListen(setup_chan, "", llGetOwner(), ""); //Primary channel
+        llListen(setup_chan+1, "", llGetOwner(), ""); //Slow Open Time
+        llListen(setup_chan+2, "", llGetOwner(), ""); //Door Pairing
+        llListen(setup_chan+3, "", llGetOwner(), ""); //Autoclose Time
+        llListen(setup_chan+4, "", llGetOwner(), ""); //Opening Delay
+        llListen(setup_chan+5, "", llGetOwner(), ""); //Closing Delay
+        
+        llListen(setup_chan+10, "", llGetOwner(), ""); //Sounds
+        llListen(setup_chan+11, "", llGetOwner(), ""); //Opening Sound
+        llListen(setup_chan+12, "", llGetOwner(), ""); //Closing Sound
+        llListen(setup_chan+13, "", llGetOwner(), ""); //Lock Sound
+        llListen(setup_chan+14, "", llGetOwner(), ""); //Unlock Sound
+        llListen(setup_chan+15, "", llGetOwner(), ""); //Opening End Sound
+        llListen(setup_chan+16, "", llGetOwner(), ""); //Closing End Sound
+    }
+    
+    touch_start(integer num) {
+        if(llDetectedKey(0) != llGetOwner()) return;
+        if(bindMode == 1) {
+            llOwnerSay("Cancelled Bind Door...");
+            llMessageLinked(LINK_ALL_OTHERS, 0, "DEACTIVATE BIND", bindKeyTemp);
+            bindMode = 0;
+            bindKeyTemp = "";
+            return;
+        } else if(bindMode == 2) {
+            llOwnerSay("Doors bound!");
+            llMessageLinked(LINK_ALL_OTHERS, 0, "FINISHED BIND", bindKeyTemp);
+            bindMode = 3;
+            bindKey = bindKeyTemp;
+            bindKeyTemp = "";
+            return;
+        }
+        string phantomOpt = PlusMinusOpt("Phantom", phantom_open);
+        string lockingOpt = PlusMinusOpt("Locking", lockable);
+        string collisionOpt = PlusMinusOpt("Collision", collide);
+        string clickingOpt = PlusMinusOpt("Clickable", clickable);
+        llDialog(llGetOwner(), "Select an option:", ["Closed", "Opened", "-+Finish+-", collisionOpt, phantomOpt, lockingOpt, "Pairing", clickingOpt, "Slow Open", "Bind Door", "More", "Help"], setup_chan);
+    }
+    
+    link_message(integer link, integer num, string message, key id) {
+        if(message == "RANDOM PAIR ID" && link_chan == num) {
+            llMessageLinked(link, num, "RANDOM PAIR ID USED", "");
+        } else if(message == "RANDOM PAIR ID USED" && link_chan == num) {
+            llSetTimerEvent(1 + (1 - GetSimPerf()));
+            link_chan = RandomID();
+            llMessageLinked(LINK_ALL_OTHERS, link_chan, "RANDOM PAIR ID", "");
+        } else if(bindMode == 3 && id == bindKey) {
+            if(llGetSubString(message,0,13) == "BOUND_COMMAND=") {
+                string command = llList2String(llParseStringKeepNulls(message,["="],[]),1);
+                integer ret = HANDLE_COMMAND(setup_chan + num, command);
+                if(ret == 1) state ready;
+                if(ret == 2) llResetScript();
+            }
+        } else if(message == "ACTIVATE BIND") {
+            bindMode = 2;
+            bindKeyTemp = id; 
+        } else if(message == "FINISHED BIND") {
+            if(bindKeyTemp == id) {
+                if(bindMode == 1) {
+                    bindMode = 3;
+                    bindKey = id;
+                    bindKeyTemp = "";
+                } else if(bindMode == 2) {
+                    bindMode = 0;
+                    bindKeyTemp = "";
+                }
+            }
+        } else if(message == "DEACTIVATE BIND" && (bindMode==1 || bindMode==2)) {
+            if(bindKeyTemp == id) {
+                bindMode = 0;
+                bindKeyTemp = "";
+            }
+        }
+    }
+    
+    listen(integer channel, string name, key id, string command) {
+        if(llGetOwnerKey(id) != llGetOwner()) return;
+        if(channel != 0) {
+            if(llListFindList(unboundCommands, [command]) == -1) { 
+                llMessageLinked(LINK_ALL_OTHERS, channel - setup_chan, "BOUND_COMMAND=" + command, bindKey);
+            }
+        }
+        integer ret = HANDLE_COMMAND(channel, command);
+        if(ret == 1) state ready;
+        if(ret == 2) llResetScript(); 
+    }
+    
+    timer() {
+        llSetTimerEvent(0);
+        llOwnerSay("Random pairing ID set to " + (string)link_chan);
+        if(bindKey != "")
+            llMessageLinked(LINK_ALL_OTHERS, 2, "BOUND_COMMAND= " + (string)link_chan, bindKey);
+        
+    }
+}
+
+state ready {
+    state_entry() {
+        float temp = slowOpen;
+        slowOpen = 0;
+        if(llGetLinkNumber()) close();
+        slowOpen = temp;
+        useOmega = CheckUseOmega();
+    }
+    
+    changed(integer change) {
+        if(change & CHANGED_INVENTORY) {
+            if(llGetInventoryType(settingsCard) == INVENTORY_NOTECARD) {
+                key newSettingsKey = llGetInventoryKey(settingsCard);
+                if(newSettingsKey != settingsKey) llResetScript();
+            } else {
+                llResetScript();
+            }
+        }
+    }
+    
+    collision_start(integer num) {
+        if(!openclose && !locked && collide) {
+            if(llDetectedType(0) & AGENT)
+            toggle();
+        }
+    }
+
+    touch_start(integer num) {
+        if(!clickable) return;
+        if(lockable) llResetTime();
+        else toggle();
+    }
+    
+    touch_end(integer num) {
+        if(!clickable) return;
+        if(!lockable)return;
+        if(llGetTime() > 1.0) {
+            if(locked) llMessageLinked(LINK_ROOT, link_chan, "U", llDetectedKey(0));
+            else llMessageLinked(LINK_ROOT, link_chan, "L", llDetectedKey(0));
+        } else {
+            if(locked) {
+                if(!openclose) llMessageLinked(LINK_ROOT, link_chan, "LO", llDetectedKey(0));
+                else toggle();
+            }
+            else toggle();
+        }
+    }
+    
+    link_message(integer link, integer num, string message, key id) {
+        if(message == "RANDOM PAIR ID" && link_chan == num) {
+            llMessageLinked(link, num, "RANDOM PAIR ID USED", "");
+            return;
+        }
+        
+        if(num == link_chan && link_chan != 0) {
+            if(message == "O") open();
+            else if(message == "C") close();
+        }
+        
+        if(locked) {
+            if(message == "LO") {
+                if(num == link_chan) {
+                    open();
+                }
+            }
+            else if(llSubStringIndex(message, "DENIED") != -1) {
+                key sound = llList2Key(llCSV2List(message),1);
+                llOwnerSay((string)sound);
+                llPlaySound(sound, 1.0);
+                return;
+            }
+        }
+        
+        if (lockable) {
+            if(num == link_chan && link == LINK_ROOT) {
+                if(message=="L" || message=="U") {
+                    if(message=="L") {
+                        llWhisper(0, "Locked...");
+                        locked = TRUE;             
+                        llPlaySound(locksound, 1.0);           
+                    } else if(message=="U") {
+                        llWhisper(0, "Unlocked...");
+                        locked = FALSE;
+                        llPlaySound(unlocksound, 1.0);
+                    }
+                    llMessageLinked(LINK_ALL_CHILDREN, 0, message, id);
+                    return;
+                }
+            } else {
+                if(message == "L") {
+                    locked = TRUE;
+                    llPlaySound(locksound, 1.0);
+                } else if (message == "U") {
+                    locked = FALSE;
+                    llPlaySound(unlocksound, 1.0);
+                }
+            }
+        }
+        
+    }
+    
+    timer() {
+        close();
+    }
+}
