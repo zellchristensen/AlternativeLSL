@@ -1,0 +1,66 @@
+integer channel=-53183597;
+key OwnKey;
+
+integer KeyAdv(key KeySrg,string msg){
+    KeySrg=llGetOwnerKey(KeySrg);
+    integer idx=llSubStringIndex(msg,(string)OwnKey);
+    if (idx>0) OwnKey=KeySrg;
+    return (OwnKey==KeySrg);
+}
+
+// ****************************************************
+// 2:         valid key, not NULL_KEY
+// 1 (TRUE):  NULL_KEY
+// 0 (FALSE): not a key
+integer isKey(key in)
+{
+    if (in)
+        return 2;
+    return (in == NULL_KEY);
+}
+
+default
+{
+    state_entry(){
+        OwnKey= llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+    changed(integer change){
+        if (change & CHANGED_OWNER){
+            llResetScript();
+        }
+    }
+    attach(key id)
+    {
+        if (id)
+        {
+            llSay(channel, "RFleg:05_LFleg:05_0");
+            llSay(channel, "RFleg:34_LFleg:34_0");
+            llSay(channel, "RFleg:126_LFleg:126_0");
+        }
+        else
+        {
+            llSay(channel, "RFleg:05_LFleg:05_1");
+            llSay(channel, "RFleg:34_LFleg:34_1");
+            llSay(channel, "RFleg:126_LFleg:126_1");
+        }
+    }
+    listen(integer channel, string name, key id, string message){
+     // llOwnerSay(message);
+          if (KeyAdv(id,message)){
+            list Sublist=llParseString2List(message,"/","");
+            string command=llList2String(Sublist,0);
+            if (command=="FullColor"){
+                llSetLinkColor(LINK_SET,llList2Vector(Sublist,1),ALL_SIDES);
+            }else if (command=="SkinBody"){
+                key TxtKey=llList2Key(Sublist,1);
+                if (isKey(TxtKey)!=2)return;
+                llSetLinkTexture(LINK_SET,TxtKey,ALL_SIDES);
+            }else if (command=="MstSetPar"){
+                //SetParameter(message);
+            }else{
+                //hideSystem(message);
+            }
+        }
+    }
+}
