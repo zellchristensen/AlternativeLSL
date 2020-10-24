@@ -129,7 +129,7 @@ SetKMSkin(key UUIDSkin,list SubSkin){
         SkinLink=GetIntDesc(llList2String(my_Sublist,0));
         if ((SkinLink)&&(llGetListLength(my_Sublist)>0)){
             SkinFace=llList2Integer(my_Sublist,1);
-            llSetLinkTexture(SkinLink,UUIDSkin,SkinFace);
+            llSetLinkPrimitiveParamsFast(SkinLink,[PRIM_TEXTURE,SkinFace,UUIDSkin]+llList2List(llGetLinkPrimitiveParams(SkinLink,[PRIM_TEXTURE,SkinFace]),1,3));
         }                   
     }    
 }
