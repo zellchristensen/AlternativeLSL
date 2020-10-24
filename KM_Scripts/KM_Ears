@@ -15,7 +15,7 @@ SetKMSkin(key UUIDSkin){
     for(;i>1;i--){
         SkinLink=i;
         SkinFace=0;
-        llSetLinkTexture(SkinLink,UUIDSkin,SkinFace);
+        llSetLinkPrimitiveParamsFast(SkinLink,[PRIM_TEXTURE,SkinFace,UUIDSkin]+llList2List(llGetLinkPrimitiveParams(SkinLink,[PRIM_TEXTURE,SkinFace]),1,3));
     }
 }
 
