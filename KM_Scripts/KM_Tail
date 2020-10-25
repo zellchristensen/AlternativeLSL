@@ -51,7 +51,7 @@ default {
         }else if (command=="TailSkin"){
             key KeyMsg=llList2Key(Sublist,1);
             if (isKey(KeyMsg)!=2) return;
-            llSetLinkTexture(LINK_SET,KeyMsg,ALL_SIDES);
+            llSetLinkPrimitiveParamsFast(LINK_SET,[PRIM_TEXTURE,ALL_SIDES,KeyMsg]+llList2List(llGetLinkPrimitiveParams(ALL_SIDES,[PRIM_TEXTURE,ALL_SIDES]),1,3));
         }else if (command=="FullColor"){
             llSetLinkColor(LINK_SET,llList2Vector(Sublist,1),ALL_SIDES);            
         }            
