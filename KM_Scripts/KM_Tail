@@ -1,0 +1,63 @@
+// Kemono Tail Created by Lantis Antares
+integer COUNT;
+integer channel=-53183596;
+string Animation="Kem-tail-8";
+
+// 2:         valid key, not NULL_KEY
+// 1 (TRUE):  NULL_KEY
+// 0 (FALSE): not a key 
+integer isKey(key in)
+{
+    if (in)
+        return 2;
+    return (in == NULL_KEY);
+}
+
+default {
+    state_entry(){
+        llSetTimerEvent(10);
+        llListen(channel,"",NULL_KEY,""); 
+    }   
+    changed(integer change){
+        if (change & CHANGED_OWNER){
+            llResetScript();
+        }
+    }     
+    attach(key ATTATCH_KEY) {
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+    }
+    
+    run_time_permissions(integer perm) {
+        if (perm & PERMISSION_TRIGGER_ANIMATION) {
+            llStartAnimation(Animation);
+        }
+    }
+    listen(integer channel, string name, key id, string message){
+        if (llGetOwnerKey(id)!= llGetOwner()) return;
+            list Sublist=llParseString2List(message,"/","");        
+            string command=llList2String(Sublist,0);           
+        if (command=="Tail0"){
+            llStopAnimation(Animation);
+            Animation="Kem-tail-8";
+            llSetTimerEvent(1);
+        }else if (command=="Tail1"){
+            llStopAnimation(Animation);
+            Animation="Kem-tail-15";
+            llSetTimerEvent(1);
+        }else if (command=="Tail2"){
+            llStopAnimation(Animation);
+            Animation="Kem-tail-40";
+            llSetTimerEvent(1);
+        }else if (command=="TailSkin"){
+            key KeyMsg=llList2Key(Sublist,1);
+            if (isKey(KeyMsg)!=2) return;
+            llSetLinkTexture(LINK_SET,KeyMsg,ALL_SIDES);
+        }else if (command=="FullColor"){
+            llSetLinkColor(LINK_SET,llList2Vector(Sublist,1),ALL_SIDES);            
+        }            
+    }
+    timer(){
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+        llSetTimerEvent(10);
+    }
+}
