@@ -19,13 +19,6 @@ default
             llResetScript();
     }
 
-    touch_start(integer num)
-    {
-        llSetAlpha(0,0); //Flat
-        llSetAlpha(1,1); //nips
-        llSetAlpha(1,2); //string
-    }
-
     listen(integer channel,string name,key id,string message)
     {
         if(id==ownerKey | llGetOwnerKey(id)==ownerKey)
