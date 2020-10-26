@@ -1,0 +1,218 @@
+integer    CONFUSED_LINK;
+integer    FROWN_LINK;
+integer    INDIFFERENT_LINK;
+integer    MOUTH_LINK_BODY;
+integer    MOUTH_LINK_CELL;
+list    MOUTH_SCULPTS        = [
+                                "mouth01",
+                                "mouth02",
+                                "mouth03",
+                                "mouth04",
+                                "mouth05",
+                                "mouth06"
+                            ];
+key        OWNER;
+integer    SMILE_LINK;
+integer    TEETH_LINK;
+list    TEETH_OFFSETS        = [
+                                <-0.25, 0.25, 0.0>,
+                                <0.25, 0.25, 0.0>,
+                                <-0.25, -0.25, 0.0>,
+                                <-0.25, -0.25, 0.0>
+                            ];
+
+integer    anim                = 0;
+string     animName            = "";
+float    confusedAlpha        = 0.0;
+float    frownAlpha            = 0.0;
+float    indifferentAlpha    = 0.0;
+string    mouthSculpt            = "mouth03";
+float    smileAlpha            = 0.0;
+integer    typing                = 0;
+string    teethTexture        = "teeth";
+vector    teethOffset            = <-0.25, 0.25, 0.0>;
+integer    voice                = 0;
+
+getAnim()
+{
+    integer anims = llGetInventoryNumber(INVENTORY_ANIMATION);
+    if(anims > 1)
+        llOwnerSay("Please place only one animation into the pony head.");
+    else if(anims == 1)
+    {
+        animName = llGetInventoryName(INVENTORY_ANIMATION, 0);
+        llOwnerSay("Setting talk animation to " + animName + ".");
+    }
+    else
+    {   animName = "";
+        llOwnerSay("Disabling talk animation.");
+    }
+}
+
+getLinks()
+{
+    integer i = 1;
+    for(; i <= llGetNumberOfPrims(); ++i)
+    {
+        string desc = llList2String(llGetLinkPrimitiveParams(i, [PRIM_DESC]), 0);
+        if(desc == "body,mouth")
+            MOUTH_LINK_BODY = i;
+        else if(desc == "cell,mouth")
+            MOUTH_LINK_CELL = i;
+        else if(desc == "prim,confused,cell")
+            CONFUSED_LINK = i;
+        else if(desc == "prim,frown,cell")
+            FROWN_LINK = i;
+        else if(desc == "prim,indifferent,cell")
+            INDIFFERENT_LINK = i;
+        else if(desc == "prim,smile,cell")
+            SMILE_LINK = i;
+        else if(desc == "teeth")
+            TEETH_LINK = i;
+    }
+}
+
+getPerms()
+{
+    llRequestPermissions(OWNER, PERMISSION_TRIGGER_ANIMATION);
+}
+
+defaults()
+{
+    llSetLinkPrimitiveParamsFast(MOUTH_LINK_BODY, [PRIM_TYPE, PRIM_TYPE_SCULPT, mouthSculpt, PRIM_SCULPT_TYPE_PLANE]);
+    llSetLinkPrimitiveParamsFast(MOUTH_LINK_CELL, [PRIM_TYPE, PRIM_TYPE_SCULPT, mouthSculpt, PRIM_SCULPT_TYPE_PLANE | PRIM_SCULPT_FLAG_INVERT]);
+    llSetLinkAlpha(CONFUSED_LINK, confusedAlpha, ALL_SIDES);
+    llSetLinkAlpha(FROWN_LINK, frownAlpha, ALL_SIDES);
+    llSetLinkAlpha(INDIFFERENT_LINK, indifferentAlpha, ALL_SIDES);
+    llSetLinkAlpha(SMILE_LINK, smileAlpha, ALL_SIDES);
+    llSetLinkPrimitiveParamsFast(TEETH_LINK, [PRIM_TEXTURE, ALL_SIDES, teethTexture, <0.5, 0.5, 0.0>, teethOffset, 0.0]);
+}
+
+default
+{
+    state_entry()
+    {
+        OWNER = llGetOwner();
+        getAnim();
+        getLinks();
+        getPerms();
+        llListen(88, "", NULL_KEY, "");
+        llListen(1664846125, "", OWNER, "voice");
+        llSetTimerEvent(0.25);
+    }
+
+    attach(key id)
+    {
+        if(id != NULL_KEY)
+            getPerms();
+    }
+
+    changed(integer c)
+    {
+        if(c & CHANGED_INVENTORY)
+            getAnim();
+        else if(c & CHANGED_LINK)
+            getLinks();
+        else if(c & CHANGED_OWNER)
+            llResetScript();
+    }
+
+    listen(integer c, string n, key id, string m)
+    {
+        if(c == 88)
+        {
+            if(llGetOwnerKey(id) == OWNER)
+            {
+                list mList = llParseString2List(m, ["|"], []);
+                string command = llList2String(mList, 0);
+                string param = llList2String(mList, 1);
+                if(command == "mouth")
+                {
+                    confusedAlpha = 0.0;
+                    frownAlpha = 0.0;
+                    indifferentAlpha = 0.0;
+                    smileAlpha = 0.0;
+                    mouthSculpt = param;
+                }
+                else if(command == "teeth")
+                    teethOffset = (vector)param;
+                else if(command == "teethtexture")
+                    teethTexture = param;
+                else if(command == "prim")
+                {
+                    if(param == "confused")
+                    {
+                        confusedAlpha = 1.0;
+                        frownAlpha = 0.0;
+                        indifferentAlpha = 0.0;
+                        mouthSculpt = "73a09a3f-ac8a-395f-e5a7-703fbb379f43";
+                        smileAlpha = 0.0;
+                    }
+                    else if(param == "frown")
+                    {
+                        confusedAlpha = 0.0;
+                        frownAlpha = 1.0;
+                        indifferentAlpha = 0.0;
+                        mouthSculpt = "73a09a3f-ac8a-395f-e5a7-703fbb379f43";
+                        smileAlpha = 0.0;
+                    }
+                    else if(param == "indifferent")
+                    {
+                        confusedAlpha = 0.0;
+                        frownAlpha = 0.0;
+                        indifferentAlpha = 1.0;
+                        mouthSculpt = "73a09a3f-ac8a-395f-e5a7-703fbb379f43";
+                        smileAlpha = 0.0;
+                    }
+                    else if(param == "smile")
+                    {
+                        confusedAlpha = 0.0;
+                        frownAlpha = 0.0;
+                        indifferentAlpha = 0.0;
+                        mouthSculpt = "73a09a3f-ac8a-395f-e5a7-703fbb379f43";
+                        smileAlpha = 1.0;
+                    }
+                }
+                defaults();
+            }
+        }
+        else if(c == 1664846125)
+        {
+            llSetTimerEvent(0.1);
+            voice = 10;
+        }
+    }
+
+    timer()
+    {
+        if(llGetAgentInfo(OWNER) & AGENT_TYPING || --voice > 0)
+        {
+            if(!anim && animName != "")
+            {
+                anim = 1;
+                llStartAnimation(animName);
+            }
+            llSetTimerEvent(0.1);
+            typing = 1;
+            string sculpt = llList2String(MOUTH_SCULPTS, (integer)llFrand(5.99));
+            llSetLinkAlpha(CONFUSED_LINK, 0.0, ALL_SIDES);
+            llSetLinkAlpha(FROWN_LINK, 0.0, ALL_SIDES);
+            llSetLinkAlpha(INDIFFERENT_LINK, 0.0, ALL_SIDES);
+            llSetLinkAlpha(SMILE_LINK, 0.0, ALL_SIDES);
+            llSetLinkPrimitiveParamsFast(MOUTH_LINK_BODY, [PRIM_TYPE, PRIM_TYPE_SCULPT, sculpt, PRIM_SCULPT_TYPE_PLANE]);
+            llSetLinkPrimitiveParamsFast(MOUTH_LINK_CELL, [PRIM_TYPE, PRIM_TYPE_SCULPT, sculpt, PRIM_SCULPT_TYPE_PLANE | PRIM_SCULPT_FLAG_INVERT]);
+            llSetLinkPrimitiveParamsFast(TEETH_LINK, [PRIM_TEXTURE, ALL_SIDES, teethTexture, <0.5, 0.5, 0.0>, llList2Vector(TEETH_OFFSETS, (integer)llFrand(3.99)), 0.0]);
+        }
+        else if(typing && voice < 1)
+        {
+            if(animName != "")
+            {
+                anim = 0;
+                llStopAnimation(animName);
+            }
+            llSetTimerEvent(0.25);
+            typing = 0;
+            defaults();
+        }
+    }
+}
