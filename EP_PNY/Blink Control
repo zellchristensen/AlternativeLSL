@@ -1,0 +1,77 @@
+integer    BLINK_LINK_1;
+integer    BLINK_LINK_2;
+integer    BLUSH_LINK_1;
+integer    BLUSH_LINK_2;
+key        OWNER;
+
+getLinks()
+{
+    BLINK_LINK_1 = 999;
+    BLUSH_LINK_1 = 999;
+    integer i = 1;
+    for(; i <= llGetNumberOfPrims(); ++i)
+    {
+        string desc = llList2String(llGetLinkPrimitiveParams(i, [PRIM_DESC]), 0);
+        if(llGetSubString(desc, 0, 9) == "blink,body")
+        {
+            if(BLINK_LINK_1 == 999)
+                BLINK_LINK_1 = i;
+            else
+                BLINK_LINK_2 = i;
+        }
+        else if(desc == "blush")
+        {
+            if(BLUSH_LINK_1 == 999)
+                BLUSH_LINK_1 = i;
+            else
+                BLUSH_LINK_2 = i;
+        }
+    }
+}
+
+default
+{
+    state_entry()
+    {
+        getLinks();
+        OWNER = llGetOwner();
+        llListen(88, "", NULL_KEY, "");
+        llSetTimerEvent(0.1);
+    }
+
+    changed(integer c)
+    {
+        if(c & CHANGED_LINK)
+            getLinks();
+        else if(c & CHANGED_OWNER)
+            llResetScript();
+    }
+
+    listen(integer c, string n, key id, string m)
+    {
+        list mList = llParseString2List(m, ["|"], []);
+        if(llGetOwnerKey(id) == OWNER)
+        {
+            if(llList2String(mList, 0) == "eyes")
+            {
+                string texture = llList2String(mList, 1);
+                llSetLinkPrimitiveParamsFast(BLINK_LINK_1, [PRIM_TEXTURE, ALL_SIDES, texture, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0]);
+                llSetLinkPrimitiveParamsFast(BLINK_LINK_2, [PRIM_TEXTURE, ALL_SIDES, texture, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0]);
+            }
+            else if(llList2String(mList, 0) == "blush")
+            {
+                llSetLinkAlpha(BLUSH_LINK_1, llList2Float(mList, 1), ALL_SIDES);
+                llSetLinkAlpha(BLUSH_LINK_2, llList2Float(mList, 1), ALL_SIDES);                
+            }
+        }
+    }
+    
+    timer()
+    {
+        llSetLinkTextureAnim(BLINK_LINK_1, ANIM_ON, ALL_SIDES, 2, 2, 0.0, 0.0, 0.0);
+        llSetLinkTextureAnim(BLINK_LINK_2, ANIM_ON, ALL_SIDES, 2, 2, 0.0, 0.0, 0.0);
+        llSetLinkTextureAnim(BLINK_LINK_1, ANIM_ON, ALL_SIDES, 2, 2, 0.0, 5.0, 12.0);
+        llSetLinkTextureAnim(BLINK_LINK_2, ANIM_ON, ALL_SIDES, 2, 2, 0.0, 5.0, 12.0);
+        llSetTimerEvent(4.0 + llFrand(6.0));
+    }
+}
