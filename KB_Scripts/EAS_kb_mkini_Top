@@ -1,0 +1,45 @@
+//Face 0 Flat
+//Face 1 nips
+//Face 2 string
+
+integer channel=-81595;
+key ownerKey;
+
+default
+{
+    state_entry()
+    {
+        llListen(channel, "", "", "");
+        ownerKey=llGetOwner();
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER)
+            llResetScript();
+    }
+
+    touch_start(integer num)
+    {
+        llSetAlpha(0,0); //Flat
+        llSetAlpha(1,1); //nips
+        llSetAlpha(1,2); //string
+    }
+
+    listen(integer channel,string name,key id,string message)
+    {
+        if(id==ownerKey | llGetOwnerKey(id)==ownerKey)
+        {
+            if(message == "nips")
+            {
+                llSetAlpha(0,0); //Flat
+                llSetAlpha(1,1); //nips
+            }
+            else if(message == "flat")
+            {
+                llSetAlpha(1,0); //Flat
+                llSetAlpha(0,1); //nips
+            }
+        }
+    }
+}
