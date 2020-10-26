@@ -1,0 +1,75 @@
+list    BODY_LINKS;
+list    CELL_LINKS;
+key        OWNER;
+
+getLinks()
+{
+    BODY_LINKS = [];
+    CELL_LINKS = [];
+    integer i = 1;
+    for(; i <= llGetNumberOfPrims(); ++i)
+    {
+        string desc = llList2String(llGetLinkPrimitiveParams(i, [PRIM_DESC]), 0);
+        if(llSubStringIndex(desc, "body") != -1)
+            BODY_LINKS = [i] + BODY_LINKS;
+        else if(llSubStringIndex(desc, "cell") != -1)
+            CELL_LINKS = [i] + CELL_LINKS;
+    }
+}
+
+setBody(vector colour)
+{
+    integer i = 0;
+    for(; i < llGetListLength(BODY_LINKS); ++i)
+        llSetLinkColor(llList2Integer(BODY_LINKS, i), colour, ALL_SIDES);
+}
+
+setCell(vector colour)
+{
+    integer i = 0;
+    for(; i < llGetListLength(CELL_LINKS); ++i)
+        llSetLinkColor(llList2Integer(CELL_LINKS, i), colour, ALL_SIDES);
+}
+
+default
+{
+    changed(integer c)
+    {
+        if(c & CHANGED_LINK)
+            getLinks();
+        else if(c & CHANGED_OWNER)
+            llResetScript();
+    }
+
+    state_entry()
+    {
+        getLinks();
+        OWNER = llGetOwner();
+        llListen(88, "", NULL_KEY, "");
+        if(llGetAttached())
+            llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS);
+        llSetTimerEvent(1.0);
+    }
+
+    run_time_permissions(integer p)
+    {
+        if(p & PERMISSION_TAKE_CONTROLS)
+            llTakeControls(CONTROL_FWD, TRUE, TRUE);
+        else
+            llResetScript();
+    }
+
+    listen(integer c, string n, key id, string m)
+    {
+        if(llGetOwnerKey(id) == OWNER)
+        {
+            list mList = llParseString2List(m, ["|"], []);
+            string command = llList2String(mList, 0);
+            string param = llList2String(mList, 1);
+            if(command == "body")
+                setBody((vector)param);
+            else if(command == "cell")
+                setCell((vector)param);
+        }
+    }
+}
