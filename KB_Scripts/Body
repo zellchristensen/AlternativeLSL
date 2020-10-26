@@ -1,0 +1,691 @@
+integer iChannel = 42;
+integer iListenHandle;
+integer iBoobMaxCount = 5;
+integer iVagMaxCount = 2;
+integer iLastBoobId;
+
+float   dVoiceAnimTimeLeft = 0;
+integer bIsVoiceTalking;
+
+integer iButtId;
+integer iTailId;
+integer iEyelashesId;
+integer iToungeId;
+integer iTailSizeId;
+
+list aiBoobList;
+list aiTailVagList;
+list aiNoTailVagList;
+
+integer bIsNippleEnabled = TRUE;
+integer bIsBlinkOn = TRUE;
+integer bIsTailOn = TRUE;
+integer bIsVaginaOn = FALSE;
+integer bIsEyelashesOn = TRUE;
+integer bIsTailFast;
+integer bIsTalking;
+integer bIsAttached;
+float  dNextBlink;
+float  dNextDeform;
+
+list   aiFeetAlphaList = [1, 1, 1, 1, 1, 1];
+list   aiLegsAlphaList = [1, 1, 1, 1, 1, 1, 1, 1];
+integer iButtAlpha = 1;
+integer iVagAlpha = 1;
+list   aiBellyAlphaList = [1, 1, 1];
+list   aiChestAlphaList = [1, 1, 1, 1];
+list   aiCollarAlphaList = [1, 1, 1, 1];
+integer iNeckAlpha = 1;
+list   aiArmsAlphaList = [1, 1, 1, 1, 1, 1, 1, 1];
+list   aiForearmsAlphaList = [1, 1, 1, 1];
+integer iHeadAlpha = 1;
+integer iBoobAlpha = 1;
+integer bIsStumpOn;
+
+string oCurrentJawAnimation = "Jawstate_000";
+string oCurrentEyeAnimation = "Eyestate_000";
+string oCurrentBlinkAnimation = "Blink_000";
+string oCurrentTailAnimation = "Tail0";
+integer iCurrentTailAnimationId;
+
+
+integer GetLinkNum ( string oPrimName )
+{
+    integer iPrimCount = llGetNumberOfPrims();
+    integer iCounter;
+    for ( iCounter = 0; iCounter < iPrimCount + 1 ; iCounter++ )
+    {
+        if ( llGetLinkName( iCounter ) == oPrimName) return iCounter;
+    }
+    return FALSE;
+}
+
+string Right(string oSrc, string oDivider) {
+    integer iIndex = llSubStringIndex( oSrc, oDivider );
+    if(~iIndex)
+        return llDeleteSubString( oSrc, 0, iIndex + llStringLength(oDivider) - 1);
+    return oSrc;
+}
+
+ClearModel()
+{
+integer iCounter;
+for ( iCounter = 0; iCounter < iBoobMaxCount; iCounter++ )
+    {
+        llSetLinkAlpha(  llList2Integer ( aiBoobList, iCounter ), 0, ALL_SIDES );
+        string oBoobSelectedString = llGetLinkName( llList2Integer( aiBoobList, iCounter ) );
+        llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "Nipples" ), 0, ALL_SIDES );
+        llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "NoNipples" ), 0, ALL_SIDES );
+    }
+for ( iCounter = 0; iCounter < iVagMaxCount; iCounter++ )
+    {
+        llSetLinkAlpha( llList2Integer ( aiNoTailVagList, iCounter ), 0, ALL_SIDES);
+        llSetLinkAlpha( llList2Integer ( aiTailVagList, iCounter ), 0, ALL_SIDES );
+    }
+
+    llSetLinkAlpha( GetLinkNum( "Butt" ), 0, ALL_SIDES );
+    llSetLinkAlpha( GetLinkNum( "Stump" ), 0, ALL_SIDES );
+}
+
+SetModelFromList ( integer iPresetId, list aiPresetsList, integer iLastPresetId, integer iMaxPresetCount, integer bAlpha )
+{
+    llSetLinkAlpha( llList2Integer ( aiPresetsList, iLastPresetId ), 0, ALL_SIDES );
+    llSetLinkAlpha( llList2Integer ( aiPresetsList, iPresetId ), bAlpha, ALL_SIDES );
+    if ( iPresetId > iMaxPresetCount )
+    {
+        llSay ( 0, "Unexpected Preset Error :<" );
+    }
+}
+
+HandleVaginaState ( integer iPresetId )
+{
+    bIsVaginaOn = iPresetId;
+    if ( bIsTailOn == TRUE )
+    {
+        SetModelFromList ( bIsVaginaOn, aiTailVagList, !bIsVaginaOn, iVagMaxCount, iVagAlpha );
+    }
+    else
+    {
+        SetModelFromList ( bIsVaginaOn, aiNoTailVagList, !bIsVaginaOn, iVagMaxCount, iVagAlpha );
+    }
+}
+
+HandleTailState ( integer bIsOn )
+{
+    if ( !bIsOn )
+        {
+                llSetLinkAlpha( iButtId , iButtAlpha, ALL_SIDES);
+                llSetLinkAlpha( iTailId , 0, ALL_SIDES);
+                llSetLinkAlpha( llList2Integer ( aiTailVagList, bIsVaginaOn ), 0, ALL_SIDES );
+                llSetLinkAlpha( llList2Integer ( aiNoTailVagList, bIsVaginaOn ), iVagAlpha, ALL_SIDES );
+                bIsTailOn = FALSE;
+        }
+        else
+        {
+                llSetLinkAlpha( iButtId , 0, ALL_SIDES);
+                llSetLinkAlpha( iTailId , iButtAlpha, ALL_SIDES);
+                llSetLinkAlpha( llList2Integer ( aiNoTailVagList, bIsVaginaOn ), 0, ALL_SIDES );
+                llSetLinkAlpha( llList2Integer ( aiTailVagList, bIsVaginaOn ), iVagAlpha, ALL_SIDES );
+                bIsTailOn = TRUE;
+        }
+}
+
+HandleBoobsState ( integer iPresetId )
+{
+    SetModelFromList ( iPresetId, aiBoobList, iLastBoobId, iBoobMaxCount, TRUE );
+
+    integer iCounter = 0;
+
+
+    for ( iCounter = 0; iCounter < 4; iCounter++ )
+    {
+        if ( iPresetId == 0 && iCounter == 2 );
+        else
+        {
+            llSetLinkAlpha( llList2Integer( aiBoobList, iPresetId ), llList2Integer( aiChestAlphaList, iCounter), iCounter * 2);
+            llSetLinkAlpha( llList2Integer( aiBoobList, iPresetId ), llList2Integer( aiChestAlphaList, iCounter), (iCounter * 2) + 1);
+        }
+    }
+
+    if ( iPresetId == 0 )
+    {
+        llSetLinkAlpha( llList2Integer( aiBoobList, iPresetId ), llList2Integer( aiChestAlphaList, 3), 4);
+        llSetLinkAlpha( llList2Integer( aiBoobList, iPresetId ), llList2Integer( aiChestAlphaList, 3), 5);
+    }
+
+    string oBoobSelectedString = llGetLinkName( llList2Integer( aiBoobList, iLastBoobId ) );
+    llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "Nipples" ), 0, ALL_SIDES);
+    llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "NoNipples" ),0, ALL_SIDES);
+
+    iLastBoobId = iPresetId;
+
+    oBoobSelectedString = llGetLinkName( llList2Integer( aiBoobList, iLastBoobId ) );
+
+    llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "Nipples" ), (bIsNippleEnabled & iBoobAlpha), ALL_SIDES);
+    llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "NoNipples" ),!bIsNippleEnabled & iBoobAlpha, ALL_SIDES);
+}
+
+HandleJawState ( integer iPresetId )
+{
+    string oAnimationNameString = "Jawstate_0";
+    if ( iPresetId < 10 )
+        {
+            oAnimationNameString += "0" + (string)iPresetId;
+        }
+    else
+        {
+            oAnimationNameString += (string)iPresetId;
+        }
+    if ( bIsAttached )
+    {
+        llStopAnimation ( oCurrentJawAnimation );
+        llStartAnimation( oAnimationNameString );
+    }
+    oCurrentJawAnimation = oAnimationNameString;
+}
+
+HandleEyelidState ( integer iPresetId )
+{
+    string oAnimationNameString = "Eyestate_0";
+    if ( iPresetId < 10 )
+        {
+            oAnimationNameString += "0" + (string)iPresetId;
+        }
+    else
+        {
+            oAnimationNameString += (string)iPresetId;
+        }
+    if ( bIsAttached )
+    {
+        llStopAnimation ( oCurrentEyeAnimation );
+        llStartAnimation( oAnimationNameString );
+    }
+    oCurrentEyeAnimation = oAnimationNameString;
+}
+
+HandleTailSpeedState ( integer iPresetId )
+{
+    if ( oCurrentTailAnimation != "Tail0" )
+    {
+        string oAnimationNameString = "Tail";
+        if ( iPresetId )
+        {
+            oAnimationNameString += "Fast" + (string)iCurrentTailAnimationId;
+        }
+        else
+        {
+            oAnimationNameString += "Slow" + (string)iCurrentTailAnimationId;
+        }
+        bIsTailFast = iPresetId;
+        if ( bIsAttached )
+        {
+            llStopAnimation ( oCurrentTailAnimation );
+            llStartAnimation( oAnimationNameString );
+        }
+        oCurrentTailAnimation = oAnimationNameString;
+    }
+}
+
+HandleTailAnimState ( integer iPresetId )
+{
+string oAnimationNameString = "Tail";
+if ( iPresetId == 0 )
+{
+    oAnimationNameString += (string)iPresetId;
+}
+else
+{
+    if ( bIsTailFast )
+    {
+        oAnimationNameString += "Fast" + (string)iPresetId;
+    }
+    else
+    {
+        oAnimationNameString += "Slow" + (string)iPresetId;
+    }
+}
+    iCurrentTailAnimationId = iPresetId;
+    if ( bIsAttached )
+    {
+        llStopAnimation ( oCurrentTailAnimation );
+        llStartAnimation( oAnimationNameString );
+    }
+    oCurrentTailAnimation = oAnimationNameString;
+}
+
+HandleNippleState ( integer bState )
+{
+    bIsNippleEnabled = bState;
+    string oBoobSelectedString = llGetLinkName( llList2Integer( aiBoobList, iLastBoobId ) );
+    llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "Nipples" ) ,bIsNippleEnabled & iBoobAlpha, ALL_SIDES);
+    llSetLinkAlpha( GetLinkNum( oBoobSelectedString + "NoNipples" ) ,!bIsNippleEnabled & iBoobAlpha, ALL_SIDES);
+}
+
+HandleAlpha( string oNameString, integer iFace )
+{
+    if ( oNameString == "Feet" )
+    {
+        aiFeetAlphaList     = llListReplaceList( aiFeetAlphaList    , [!llList2Integer( aiFeetAlphaList    , iFace)], iFace, iFace );
+        llSetLinkAlpha( GetLinkNum( oNameString ), llList2Integer( aiFeetAlphaList    , iFace), iFace );
+    }
+    else if ( oNameString == "Legs" )
+    {
+        aiLegsAlphaList     = llListReplaceList( aiLegsAlphaList    , [!llList2Integer( aiLegsAlphaList    , iFace)], iFace, iFace );
+        llSetLinkAlpha( GetLinkNum( oNameString ), llList2Integer( aiLegsAlphaList    , iFace), iFace );
+    }
+    else if ( oNameString == "Butt" )
+    {
+        iButtAlpha = iFace;
+        if ( bIsTailOn )
+        {
+            llSetLinkAlpha( GetLinkNum( "Tail" ), iButtAlpha, ALL_SIDES );
+        }
+        else
+        {
+            llSetLinkAlpha( GetLinkNum( "Butt" ), iButtAlpha, ALL_SIDES );
+        }
+    }
+    else if ( oNameString == "Vag" )
+    {
+        iVagAlpha = !iVagAlpha;
+
+        if ( !bIsVaginaOn )
+        {
+            if (bIsTailOn) oNameString = "VaginaTailSmooth";
+            else oNameString = "VaginaNoTailSmooth";
+        }
+        else
+        {
+            if (bIsTailOn) oNameString = "VaginaTailNonSmooth";
+            else oNameString = "VaginaNoTailNonSmooth";
+        }
+
+        llSetLinkAlpha( GetLinkNum( oNameString ), iVagAlpha, ALL_SIDES );
+    }
+    else if ( oNameString == "Belly" )
+    {
+        integer iToReplace = !llList2Integer( aiBellyAlphaList   , iFace);
+        aiBellyAlphaList = llListReplaceList( aiBellyAlphaList   , [ iToReplace ], iFace, iFace );
+
+        if ( iFace == 0 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 0);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 1);
+        }
+        else if ( iFace == 1 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 2);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 3);
+        }
+        else if ( iFace == 2 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 4);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 5);
+        }
+
+    }
+    else if ( oNameString == "Chest" )
+    {
+        integer iToReplace = !llList2Integer( aiChestAlphaList   , iFace);
+        aiChestAlphaList = llListReplaceList( aiChestAlphaList   , [ iToReplace ], iFace, iFace );
+        oNameString = llGetLinkName( llList2Integer( aiBoobList, iLastBoobId ) );
+
+        if ( iFace == 0 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 0);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 1);
+        }
+        else if ( iFace == 1 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 2);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 3);
+        }
+        else if ( iFace == 2 )
+        {
+            iBoobAlpha = !iBoobAlpha;
+
+            if ( iLastBoobId >= 1 )
+            {
+                llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 4);
+                llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 5);
+                if (bIsNippleEnabled) oNameString = llGetLinkName( llList2Integer( aiBoobList, iLastBoobId ) ) + "Nipples";
+                else oNameString = llGetLinkName( llList2Integer( aiBoobList, iLastBoobId ) ) + "NoNipples";
+
+                llSetLinkAlpha( GetLinkNum( oNameString ), iBoobAlpha, ALL_SIDES );
+            }
+        }
+        else if ( iFace == 3 )
+        {
+            if ( iLastBoobId >= 1 )
+            {
+                llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 6);
+                llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 7);
+            }
+            else
+            {
+                llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 4);
+                llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 5);
+            }
+        }
+    }
+    else if ( oNameString == "Collar" )
+    {
+        integer iToReplace = !llList2Integer( aiCollarAlphaList   , iFace);
+        aiCollarAlphaList = llListReplaceList( aiCollarAlphaList   , [iToReplace], iFace, iFace );
+        if ( iFace == 0 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 0);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 1);
+        }
+        else if ( iFace == 1 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 2);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 3);
+        }
+        else if ( iFace == 2 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 4);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 5);
+        }
+        else if ( iFace == 3 )
+        {
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 6);
+            llSetLinkAlpha( GetLinkNum( oNameString ), iToReplace, 7);
+        }
+    }
+    else if ( oNameString == "Neck" )
+    {
+        iNeckAlpha = !iNeckAlpha;
+        if ( !bIsStumpOn )
+            llSetLinkAlpha( GetLinkNum( oNameString ), iNeckAlpha, ALL_SIDES );
+    }
+    else if ( oNameString == "Arms" )
+    {
+        aiArmsAlphaList     = llListReplaceList( aiArmsAlphaList    , [!llList2Integer( aiArmsAlphaList    , iFace)], iFace, iFace );
+        llSetLinkAlpha( GetLinkNum( oNameString ), llList2Integer( aiArmsAlphaList    , iFace), iFace );
+    }
+    else if ( oNameString == "Forearms" )
+    {
+        aiForearmsAlphaList = llListReplaceList( aiForearmsAlphaList, [!llList2Integer( aiForearmsAlphaList, iFace)], iFace, iFace );
+        llSetLinkAlpha( GetLinkNum( oNameString ), llList2Integer( aiForearmsAlphaList    , iFace), iFace );
+    }
+    else if ( oNameString == "Head" )
+    {
+        iHeadAlpha = !iHeadAlpha;
+        if ( bIsStumpOn )
+        {
+            llSetLinkAlpha( GetLinkNum( "Stump" ), iHeadAlpha, ALL_SIDES );
+        }
+        else
+        {
+            llSetLinkAlpha( GetLinkNum( "Head" ), iHeadAlpha, ALL_SIDES );
+
+            llSetLinkAlpha( GetLinkNum( "Eyelashes" ), iHeadAlpha & bIsEyelashesOn, ALL_SIDES );
+
+            llSetLinkAlpha( GetLinkNum( "MouthInterior" ), iHeadAlpha, ALL_SIDES );
+        }
+    }
+}
+
+HandleTailSize ( integer iSize )
+{
+    if ( iTailSizeId != iSize )
+    {
+        iTailSizeId = iSize;
+        if ( bIsAttached )
+            llStartAnimation("TailSize" + (string)iTailSizeId);
+    }
+}
+
+HandleEyelashesTexture( string oTextureKey )
+{
+    if (oTextureKey != "" )
+        llSetLinkTexture( GetLinkNum( "Eyelashes" ), oTextureKey, ALL_SIDES);
+}
+
+ParseMessage( string message )     //Decrypt
+{
+    list parsed = llParseString2List(message, ["|"], []);
+    integer lengthOfList = llGetListLength(parsed);
+    string oCategoryString = llList2String(parsed, 0);
+    integer iPresetId =  llList2Integer ( parsed, 2 );
+
+    if ( oCategoryString == "BoobsState" )
+    {
+        HandleBoobsState ( iPresetId );
+    }
+    else if ( oCategoryString == "VaginaState" )
+    {
+        HandleVaginaState ( iPresetId );
+    }
+    else if ( oCategoryString == "TailState" )
+    {
+       HandleTailState ( iPresetId );
+    }
+    else if ( oCategoryString == "EyelashState" )
+    {
+        bIsEyelashesOn = iPresetId;
+        llSetLinkAlpha( iEyelashesId ,bIsEyelashesOn & iHeadAlpha & !bIsStumpOn, ALL_SIDES);
+    }
+    else if ( oCategoryString == "MouthState" )
+    {
+        HandleJawState ( iPresetId );
+    }
+    else if ( oCategoryString == "EyelidState" )
+    {
+        HandleEyelidState ( iPresetId );
+    }
+    else if ( oCategoryString == "TailAnimState" )
+    {
+        HandleTailAnimState ( iPresetId );
+    }
+    else if ( oCategoryString == "TailSpeedState" )
+    {
+        HandleTailSpeedState ( iPresetId );
+    }
+    else if ( oCategoryString == "NippleState" )
+    {
+        HandleNippleState ( iPresetId );
+    }
+    else if ( oCategoryString == "Alpha" )
+    {
+        HandleAlpha( llList2String ( parsed, 2 ), llList2Integer ( parsed, 1 ));
+    }
+    else if ( oCategoryString == "TailSize" )
+    {
+        HandleTailSize( iPresetId );
+    }
+    else if ( oCategoryString == "StumpState" )
+    {
+        bIsStumpOn = llList2Integer ( parsed, 1 );
+        llSetLinkAlpha( GetLinkNum( "Head" ), !bIsStumpOn & iHeadAlpha, ALL_SIDES );
+        llSetLinkAlpha( GetLinkNum( "Eyelashes" ), !bIsStumpOn & iHeadAlpha & bIsEyelashesOn, ALL_SIDES );
+        llSetLinkAlpha( GetLinkNum( "MouthInterior" ), !bIsStumpOn & iHeadAlpha, ALL_SIDES );
+        llSetLinkAlpha( GetLinkNum( "Neck" ), !bIsStumpOn & iNeckAlpha, ALL_SIDES );
+        llSetLinkAlpha( GetLinkNum( "Stump" ), bIsStumpOn & iHeadAlpha, ALL_SIDES );
+    }
+    else if ( oCategoryString == "Texture" )
+    {
+        if ( llList2Integer ( parsed, 1 ) == 3  )
+            HandleEyelashesTexture( llList2String ( parsed, 2 ) );
+    }
+    else if ( oCategoryString == "VoiceTalk" )
+    {
+        dVoiceAnimTimeLeft = 0.7;
+    }
+}
+
+HandleListen ( string oMessageString )
+{
+    ParseMessage ( oMessageString );
+}
+
+Init()
+{
+    iListenHandle = llListen( iChannel, "", "", "");
+
+    aiBoobList += GetLinkNum( "ChestMan"  );
+    aiBoobList += GetLinkNum( "ChestNoCup");
+    aiBoobList += GetLinkNum( "ChestACup" );
+    aiBoobList += GetLinkNum( "ChestBCup" );
+    aiBoobList += GetLinkNum( "ChestCCup" );
+    aiNoTailVagList += GetLinkNum( "VaginaNoTailSmooth" );
+    aiNoTailVagList += GetLinkNum( "VaginaNoTailNonSmooth" );
+    aiTailVagList += GetLinkNum( "VaginaTailSmooth" );
+    aiTailVagList += GetLinkNum( "VaginaTailNonSmooth" );
+    iButtId = GetLinkNum( "Butt" );
+    iTailId = GetLinkNum( "Tail" );
+    iEyelashesId = GetLinkNum( "Eyelashes" );
+
+    ClearModel();
+
+    HandleTailState ( bIsTailOn );
+    HandleTailSpeedState ( bIsTailFast );
+    llSetLinkAlpha( iEyelashesId ,bIsEyelashesOn & iHeadAlpha & !bIsStumpOn, ALL_SIDES);
+    HandleEyelidState ( 0 );
+    SetModelFromList ( iLastBoobId, aiBoobList, iLastBoobId, iBoobMaxCount, TRUE );
+    SetModelFromList ( bIsVaginaOn, aiTailVagList, !bIsVaginaOn, iVagMaxCount, TRUE );
+    HandleVaginaState ( bIsVaginaOn );
+    HandleNippleState( bIsNippleEnabled );
+    HandleJawState( 0 );
+    HandleTailSpeedState( 0 );
+    HandleTailAnimState( 0 );
+
+    llSetTimerEvent( 0.1 );
+    if ( bIsAttached )
+    {
+        llStartAnimation( oCurrentJawAnimation );
+        llStartAnimation( oCurrentEyeAnimation );
+    }
+}
+
+default
+{
+    state_entry()
+    {
+        bIsAttached = llGetAttached();
+
+        if ( bIsAttached )
+            llRequestPermissions( llGetOwner(), PERMISSION_TRIGGER_ANIMATION );
+
+        Init();
+    }
+
+    listen( integer channel, string name, key id, string message )
+    {
+        if ( llGetOwnerKey( id ) == llGetOwner() )
+        {
+            HandleListen( message );
+        }
+    }
+
+    attach ( key id )
+    {
+
+        llStartAnimation( oCurrentJawAnimation );
+        llStartAnimation( oCurrentEyeAnimation );
+        llStartAnimation ( oCurrentTailAnimation );
+        llStartAnimation("TailSize" + (string)iTailSizeId);
+
+    }
+
+    on_rez ( integer start_param )
+    {
+        bIsAttached = llGetAttached();
+
+        if ( bIsAttached )
+        {
+            llRequestPermissions( llGetOwner(), PERMISSION_TRIGGER_ANIMATION );
+
+            llStartAnimation( "Deformation" );
+            llStopAnimation ( oCurrentTailAnimation );
+            llStartAnimation ( oCurrentTailAnimation );
+        }
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_LINK)
+        {
+             llResetScript();
+        }
+        if (change & CHANGED_OWNER)
+        {
+             llResetScript();
+        }
+    }
+
+    timer()
+    {
+        if (  dNextDeform <= 0  )
+        {
+            dNextDeform = 6;
+            if ( bIsAttached )
+            {
+                llStartAnimation( "Deformation" );
+                llStartAnimation("TailSize" + (string)iTailSizeId);
+            }
+        }
+        else
+        {
+            dNextDeform -= 0.1;
+        }
+
+        if ( dVoiceAnimTimeLeft > 0 )
+        {
+            dVoiceAnimTimeLeft-= 0.1;
+            if ( !bIsVoiceTalking )
+            {
+                bIsVoiceTalking = TRUE;
+                llStopAnimation( oCurrentJawAnimation );
+                llStartAnimation( "Talk" );
+            }
+        }
+        else
+        {
+            if ( bIsVoiceTalking )
+            {
+                bIsVoiceTalking = FALSE;
+                if ( !bIsTalking )
+                {
+                    llStopAnimation( "Talk" );
+                    llStartAnimation( oCurrentJawAnimation );
+                }
+            }
+        }
+
+        if ( llGetAgentInfo( llGetOwner() ) & AGENT_TYPING )
+        {
+            if ( bIsAttached )
+                llStopAnimation( oCurrentJawAnimation );
+            if ( !bIsTalking )
+            {
+                bIsTalking = TRUE;
+                if ( bIsAttached )
+                    llStartAnimation( "Talk" );
+            }
+        }
+        else
+        {
+            if ( bIsTalking && bIsAttached && !bIsVoiceTalking )
+            {
+                llStartAnimation( oCurrentJawAnimation );
+                llStopAnimation( "Talk" );
+            }
+            bIsTalking = FALSE;
+        }
+
+        if ( oCurrentEyeAnimation != "Eyestate_010" && dNextBlink <= 0  )
+        {
+            string oBlinkAnimation = "Blink_" + Right( oCurrentEyeAnimation, "_" );
+            dNextBlink = 10.0 + llFrand( -5.0 );
+
+            if ( bIsAttached )
+                llStartAnimation( oBlinkAnimation );
+        }
+        else
+        {
+            dNextBlink -= 0.1;
+        }
+    }
+}
