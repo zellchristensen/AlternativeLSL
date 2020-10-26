@@ -1,0 +1,129 @@
+list    BODY_LINKS;
+list    CELL_LINKS;
+integer    EYE_LINK;
+key        OWNER;
+
+vector    eyeOffset    = ZERO_VECTOR;
+
+caution()
+{
+    if(llGetLinkName(llGetLinkNumber()) != "eyecolor")
+    {
+        llOwnerSay("WARNING: The \"" + llGetScriptName() + "\" script must ONLY be placed in the eye prim labled \"eyecolor\". Please place the script in the correct prim using \"Edit Linked\". This script will now delete itself.");
+        llRemoveInventory(llGetScriptName());
+    }
+    else
+        llOwnerSay("To apply the non-transfer eye texture, place the texture into the contents of the eye prim containing this script.");
+}
+
+getLinks()
+{
+    BODY_LINKS = [];
+    CELL_LINKS = [];
+    integer i = 1;
+    for(; i <= llGetNumberOfPrims(); ++i)
+    {
+        string desc = llList2String(llGetLinkPrimitiveParams(i, [PRIM_DESC]), 0);
+        if(llSubStringIndex(desc, "body") != -1)
+            BODY_LINKS = [i] + BODY_LINKS;
+        else if(llSubStringIndex(desc, "cell") != -1)
+            CELL_LINKS = [i] + CELL_LINKS;
+        else if(desc == "eyecolor,pupil")
+            EYE_LINK = i;
+    }
+}
+
+getTexture()
+{
+    if(llGetInventoryNumber(INVENTORY_TEXTURE))
+        llSetTexture(llGetInventoryName(INVENTORY_TEXTURE, 0), ALL_SIDES);
+    else
+        llSetTexture("2fa45086-8bef-3d29-c9d9-0e2fc11452cc", ALL_SIDES);
+}
+
+setBody(vector colour)
+{
+    integer i = 0;
+    for(; i < llGetListLength(BODY_LINKS); ++i)
+        llSetLinkColor(llList2Integer(BODY_LINKS, i), colour, ALL_SIDES);
+}
+
+setCell(vector colour)
+{
+    integer i = 0;
+    for(; i < llGetListLength(CELL_LINKS); ++i)
+        llSetLinkColor(llList2Integer(CELL_LINKS, i), colour, ALL_SIDES);
+}
+
+default
+{    
+    changed(integer c)
+    {
+        if(c & CHANGED_INVENTORY)
+            getTexture();
+        else if(c & CHANGED_LINK)
+            getLinks();
+        else if(c & CHANGED_OWNER)
+            llResetScript();
+    }
+    
+    state_entry()
+    {
+        caution();
+        getLinks();
+        OWNER = llGetOwner();
+        llListen(88, "", NULL_KEY, "");
+        llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS);
+        llSetTimerEvent(1.0);
+    }
+    
+    run_time_permissions(integer p)
+    {
+        if(p & PERMISSION_TAKE_CONTROLS)
+            llTakeControls(CONTROL_FWD, TRUE, TRUE);
+        else
+            llResetScript();
+    }
+
+    listen(integer c, string n, key id, string m)
+    {
+        if(llGetOwnerKey(id) == OWNER)
+        {
+            list mList = llParseString2List(m, ["|"], []);
+            string command = llList2String(mList, 0);
+            string param = llList2String(mList, 1);
+            if(command == "body")
+                setBody((vector)param);
+            else if(command == "cell")
+                setCell((vector)param);
+            else if(command == "eyecolor")
+                llSetLinkPrimitiveParamsFast(EYE_LINK, [PRIM_TEXTURE, ALL_SIDES, param, <1.0, 1.0, 0.0>, eyeOffset, 0.0]);
+            else if(command == "movement")
+            {
+                if(param == "off")
+                    llSetTimerEvent(0.0);
+                else
+                    llSetTimerEvent(1.0);
+            }
+            else if(command == "pupil")
+            {
+                eyeOffset = (vector)param;
+                llOffsetTexture(eyeOffset.x, eyeOffset.y, ALL_SIDES);
+            }
+        }
+    }
+
+    timer()
+    {
+        float randX = llFrand(0.05);
+        float randY = llFrand(0.05);
+        if(randX < 0.025)
+            randX = -randX - 0.025;
+        if(randY < 0.025)
+            randY = -randY - 0.025;
+        llOffsetTexture(eyeOffset.x + randX, eyeOffset.y + randY, ALL_SIDES);
+        llSleep(0.3);
+        llOffsetTexture(eyeOffset.x, eyeOffset.y, ALL_SIDES);
+        llSetTimerEvent(2.0 + llFrand(6.0));
+    }
+}
