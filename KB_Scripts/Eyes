@@ -1,0 +1,59 @@
+integer iChannel = 42;
+key kCurrentTexture = "eyetext01"; // start with default iris texture
+float fCurrentIrisSize = 1;
+float fNextEyeMove;
+vector vCurrentOffset;
+
+default
+{
+    state_entry()
+    {
+        llListen(iChannel, "", llDetectedKey(0), "");
+        llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 0, kCurrentTexture, <fCurrentIrisSize, fCurrentIrisSize, 0.0>, <0,0,0>, 0] );
+        llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 1, kCurrentTexture, <-fCurrentIrisSize, fCurrentIrisSize, 0.0>, <0,0,0>, 0] );
+
+        llSetTimerEvent( 0.1 );
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if ( llGetOwnerKey( id ) == llGetOwner() )
+        {
+            list parsed = llParseString2List(message, ["|"], []);
+            string oCategoryString = llList2String(parsed, 0);
+
+            if ( oCategoryString == "Texture" && llList2Integer( parsed, 1) == 2 )
+            {
+                if ( llList2Key( parsed, 2 ) )
+                {
+                    kCurrentTexture = llList2Key( parsed, 2 );
+                    llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 0, kCurrentTexture, <fCurrentIrisSize, fCurrentIrisSize, 0.0>, <0,0,0>, 0] );
+                    llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 1, kCurrentTexture, <-fCurrentIrisSize, fCurrentIrisSize, 0.0>, <0,0,0>, 0] );
+                }
+            }
+            else if ( oCategoryString == "IrisSize" )
+            {
+                fCurrentIrisSize = llList2Float( parsed, 2 );
+                llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 0, kCurrentTexture, <fCurrentIrisSize, fCurrentIrisSize, 0.0>, <0,0,0>, 0] );
+                llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 1, kCurrentTexture, <-fCurrentIrisSize, fCurrentIrisSize, 0.0>, <0,0,0>, 0] );
+            }
+        }
+    }
+
+    timer()
+    {
+        if ( fNextEyeMove <= 0 )
+        {
+            fNextEyeMove = 3 - llFrand(1);
+            float fEyeMoveX = 0.05 - llFrand(0.1);
+            float fEyeMoveY = 0.05 - llFrand(0.1);
+            llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 0, kCurrentTexture, <fCurrentIrisSize, fCurrentIrisSize, 0.0>, <fEyeMoveX + 0.025,fEyeMoveY,0>, 0] );
+            llSetLinkPrimitiveParamsFast( LINK_THIS, [PRIM_TEXTURE, 1, kCurrentTexture, <-fCurrentIrisSize, fCurrentIrisSize, 0.0>, <fEyeMoveX - 0.025,fEyeMoveY,0>, 0] );
+        }
+        else
+        {
+            fNextEyeMove -= 0.1;
+        }
+    }
+
+}
