@@ -1,0 +1,860 @@
+integer iChannel = 42;
+
+integer bIsMenuOn;
+vector rVisibleRot = <0.0, 0.0, 0.0>;
+vector rInVisibleRot  = < 90.0,0.0,0.0> ;
+key gUser;
+
+string kSliderTextureId = "sliderTexture";
+string kPressedCheckboxId = "pressedCheckboxTexture";
+string kHighlightTextureId = "hilightTexture";
+string kHandPoseTextureId = "handposeText";
+
+integer iTail0Id;
+integer iTail1Id;
+integer iTail2Id;
+integer iTail3Id;
+
+integer bIsStumpButtonChecked;
+integer bIsEyelashesButtonChecked = TRUE;
+integer bIsNipplesButtonChecked = TRUE;
+integer bIsNoseButtonChecked;
+integer bIsTailButtonChecked;
+integer bIsVaginaButtonChecked;
+integer bIsTailFastTailChecked;
+integer bIsRotating;
+
+list    aiFeetAlphaList = [1, 1, 1, 1, 1, 1];
+list    aiLegsAlphaList = [1, 1, 1, 1, 1, 1, 1, 1];
+integer bButtAlpha = TRUE;
+list    aiVagAlphaList = [1, 1];
+list    aiBellyAlphaList = [1, 1, 1];
+list    aiChestAlphaList = [1, 1, 1, 1];
+list    aiNipplesAlphaList = [1, 1];
+list    aiCollarAlphaList = [1, 1, 1, 1];
+list    aiNeckAlphaList = [1, 1];
+list    aiArmsAlphaList = [1, 1, 1, 1, 1, 1, 1, 1];
+list    aiForearmsAlphaList = [1, 1, 1, 1];
+list    aiHandsAlphaList = [1, 1];
+list    aiMouthAlphaList = [1, 1];
+list    aiNoseAlphaList = [1, 1];
+list    aiHeadAlphaList = [1, 1];
+
+integer iLeftHandGestureSelected = 0;
+integer iRightHandGestureSelected = 0;
+integer iToungePoseSelected = 0;
+integer iTailSizeSelected = 0;
+integer iApplierCategory;
+
+integer iTailSelected;
+integer iExpressionSelected;
+
+float dLastTouchedSlider = 0;
+
+list aiLinkNumbers = [];
+
+list aiTailBaseTextureList = ["tailBase01","tailbase02","tailbase03","tailbase04","tailbase05","tailbase06","tailbase07","tailbase08","tailbase09","tailbase10"];
+
+list aiTailFemaleTextureList = ["tailfemale01","tailfemale02","tailfemale03","tailfemale04","tailfemale05","tailfemale06","tailfemale07","tailfemale08","tailfemale09","tailfemale10"];
+
+list aiNoTailBaseTextureList = ["notailbase01","notailbase02","notailbase03","notailbase04","notailbase05","notailbase06","notailbase07","notailbase08","notailbase09","notailbase10"];
+
+list aiNoTailFemaleTextureList = ["notailfemale01","notailfemale02","notailfemale03","notailfemale04","notailfemale05","notailfemale06","notailfemale07","notailfemale08","notailfemale09","notailfemale10"];
+
+list aiEyesTextureList = ["eyetext01","eyetext02","eyetext03","eyetext04","eyetext05","eyetext06","eyetext07","eyetext08"];
+
+list aiEyelashesTextureList = ["eyelash01","eyelash02","eyelash03","eyelash04","eyelash05"];
+
+list aiTextureList;
+list aiTexturePickList;
+
+integer iListStart = 0;
+integer iTextureListSelected = 1;
+
+integer iChestSelected;
+
+string Right(string oSrc, string oDivider) {
+    integer iIndex = llSubStringIndex( oSrc, oDivider );
+    if(~iIndex)
+        return llDeleteSubString( oSrc, 0, iIndex + llStringLength(oDivider) - 1);
+    return oSrc;
+}
+
+string Left(string oSrc, string oDivider) {
+    integer iIndex = llSubStringIndex( oSrc, oDivider );
+    if(~iIndex)
+        return llDeleteSubString( oSrc, iIndex, -1);
+    return oSrc;
+}
+
+integer GetLinkNum ( string oPrimName )
+{
+    integer iPrimCount = llGetNumberOfPrims();
+    integer iCounter;
+    for ( iCounter = 0; iCounter < iPrimCount + 1 ; iCounter++ )
+    {
+        if ( llGetLinkName( iCounter ) == oPrimName) return iCounter;
+    }
+    return FALSE;
+}
+
+float HandleTouchX ( float dXVar )
+{
+    if ( dXVar <= 0.07 )
+    {
+        dXVar = 0.07;
+    }
+    else
+    if ( dXVar >= 0.93 )
+    {
+        dXVar = 0.93;
+    }
+    dLastTouchedSlider = dXVar;
+
+    return dXVar;
+}
+
+SetTextures ( integer bListStart )
+{
+    if (iTextureListSelected == 0)
+    {
+        aiTextureList = aiNoTailBaseTextureList;
+    }
+    else if ( iTextureListSelected == 1 )
+    {
+        aiTextureList = aiTailBaseTextureList;
+    }
+    else if ( iTextureListSelected == 2 ) aiTextureList = aiEyesTextureList;
+    else if ( iTextureListSelected == 3 ) aiTextureList = aiEyelashesTextureList;
+
+    integer iTextureCount = llGetListLength( aiTextureList );
+    integer iLimit = ( iTextureCount / 2 ) - 3;
+    if ( iLimit < 0 )
+    {
+        iLimit = 0;
+    }
+
+    if ( bListStart >= 0 && ( bListStart <= iLimit ) )
+    {
+        iListStart = bListStart;
+        aiTexturePickList = [];
+        integer iRangeStart = bListStart * 2;
+        integer iCounter;
+        for ( iCounter = iRangeStart; iCounter < iRangeStart + 8; iCounter++  )
+        {
+            if ( iCounter < iTextureCount )
+            {
+                if ( iTextureListSelected == 1 )
+                {
+                    if ( llList2String( llParseString2List( llList2String( aiTailBaseTextureList, iCounter ), [":"], []), 0 ) )
+                        aiTextureList = aiTailBaseTextureList;
+                    else
+                        aiTextureList = aiTailFemaleTextureList;
+                    aiTexturePickList +=  llList2String( llParseString2List( llList2String( aiTextureList, iCounter ), [":"], []), 0 );
+                }
+                else if ( iTextureListSelected == 0 )
+                {
+                    if ( llList2String( llParseString2List( llList2String( aiNoTailBaseTextureList, iCounter ), [":"], []), 0 ) )
+                        aiTextureList = aiNoTailBaseTextureList;
+                    else
+                        aiTextureList = aiNoTailFemaleTextureList;
+                    aiTexturePickList +=  llList2String( llParseString2List( llList2String( aiTextureList, iCounter ), [":"], []), 0 );
+                }
+                else
+                {
+                    aiTexturePickList +=  llList2String( aiTextureList, iCounter );
+                }
+                llSetLinkPrimitiveParamsFast( llList2Integer( aiLinkNumbers, iCounter - iRangeStart ), [PRIM_TEXTURE, 4, llList2String( aiTexturePickList, iCounter - iRangeStart ), <1.0, 1.0, 1.0 >, < 0, 0, 0 >,0.0, PRIM_COLOR, 4, <1.0, 1.0, 1.0>, 1.0]);
+            }
+            else
+            {
+                llSetLinkPrimitiveParamsFast( llList2Integer( aiLinkNumbers, iCounter - iRangeStart ), [ PRIM_COLOR, 4, <1.0, 1.0, 1.0>, 0]);
+            }
+        }
+    }
+
+}
+
+HandleSlidersTouch(integer linknum, integer face)
+{
+    string linkname = llGetLinkName(linknum);
+    vector  touchST = llDetectedTouchST(0);
+    integer iTouchArea;
+
+    if ( !bIsRotating && !bIsMenuOn && touchST.x != -1  )
+    {
+    if(linkname == "Eyelids")
+    {
+       iTouchArea = (integer)(touchST.x / 0.09 );
+       touchST.x = HandleTouchX( touchST.x );
+       if ( iTouchArea >= 10 )
+       {
+           iTouchArea = 10;
+       }
+       else if ( iTouchArea < 0 )
+       {
+           iTouchArea = 0;
+       }
+       iTouchArea = 10 - iTouchArea;
+       llSay(iChannel, "EyelidState|" + (string)face + "|" + (string)iTouchArea );
+
+       llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, face, kSliderTextureId, <1.0, 1.0, 0.0>, < 1 - ( touchST.x + 0.5 ), 0, 0 >,0.0]);
+    }
+    else
+    if( linkname == "Boobs" )
+    {
+        iTouchArea = (integer)(touchST.x / 0.2 );
+        touchST.x = HandleTouchX( touchST.x );
+        if ( iTouchArea >= 5 )
+        {
+           iTouchArea = 4;
+        }
+        else if ( iTouchArea < 0 )
+        {
+           iTouchArea = 0;
+        }
+
+        if ( iChestSelected != iTouchArea )
+        {
+            iChestSelected = iTouchArea;
+            llSay(iChannel, "BoobsState|" + (string)face + "|" + (string)iTouchArea );
+        }
+        llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, face, kSliderTextureId, <1.0, 1.0, 0.0>, < 1 - ( touchST.x + 0.5 ), 0, 0 >,0.0]);
+    }
+         else
+    if(linkname == "Mouth")
+    {
+        iTouchArea = (integer)(touchST.x / 0.047 );
+        touchST.x = HandleTouchX( touchST.x );
+        if ( iTouchArea >= 20 )
+        {
+           iTouchArea = 20;
+        }
+        else if ( iTouchArea < 0 )
+        {
+           iTouchArea = 0;
+        }
+        llSay(iChannel, "MouthState|" + (string)face + "|" + (string)iTouchArea );
+        llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, face, kSliderTextureId, <1.0, 1.0, 0.0>, < 1 - ( touchST.x + 0.5 ), 0, 0 >,0.0]);
+    }
+    if(linkname == "Iris")
+    {
+        touchST.x = HandleTouchX( touchST.x );
+        float fIrisSize =  1.5 - ( ( touchST.x - 0.07 ) / 0.86 );
+        llSay(iChannel, "IrisSize|" + (string)face + "|" + (string)fIrisSize );
+        llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, face, kSliderTextureId, <1.0, 1.0, 0.0>, < 1 - ( touchST.x + 0.5 ), 0, 0 >,0.0]);
+    }
+    }
+}
+
+HandleAlpha( string oName, integer iFace, integer iLinknum )
+{
+    string oNameString = Left(oName, "_");
+    list aiOperatingList;
+
+    if ( oNameString == "Feet" )
+    {
+        aiOperatingList = aiFeetAlphaList     = llListReplaceList( aiFeetAlphaList    , [!llList2Integer( aiFeetAlphaList    , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Legs" )
+    {
+        aiOperatingList = aiLegsAlphaList     = llListReplaceList( aiLegsAlphaList    , [!llList2Integer( aiLegsAlphaList    , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Butt" || oNameString == "Tail")
+    {
+        oNameString = "Butt";
+        bButtAlpha = !bButtAlpha;
+        iFace = bButtAlpha;
+    }
+    else if ( oNameString == "Vag" )
+    {
+        aiOperatingList = aiVagAlphaList      = llListReplaceList( aiVagAlphaList     , [!llList2Integer( aiVagAlphaList     , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Belly" )
+    {
+        aiOperatingList = aiBellyAlphaList    = llListReplaceList( aiBellyAlphaList   , [!llList2Integer( aiBellyAlphaList   , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Chest" )
+    {
+        aiOperatingList = aiChestAlphaList    = llListReplaceList( aiChestAlphaList   , [!llList2Integer( aiChestAlphaList   , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Collar" )
+    {
+        aiOperatingList = aiCollarAlphaList   = llListReplaceList( aiCollarAlphaList  , [!llList2Integer( aiCollarAlphaList  , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Neck" )
+    {
+        aiOperatingList = aiNeckAlphaList     = llListReplaceList( aiNeckAlphaList    , [!llList2Integer( aiNeckAlphaList    , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Arms" )
+    {
+        aiOperatingList = aiArmsAlphaList     = llListReplaceList( aiArmsAlphaList    , [!llList2Integer( aiArmsAlphaList    , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Forearms" )
+    {
+        aiOperatingList = aiForearmsAlphaList = llListReplaceList( aiForearmsAlphaList, [!llList2Integer( aiForearmsAlphaList, iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Hands" )
+    {
+        aiOperatingList = aiHandsAlphaList    = llListReplaceList( aiHandsAlphaList   , [!llList2Integer( aiHandsAlphaList   , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Mouth" )
+    {
+        aiOperatingList = aiMouthAlphaList    = llListReplaceList( aiMouthAlphaList   , [!llList2Integer( aiMouthAlphaList   , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Nose" )
+    {
+        aiOperatingList = aiNoseAlphaList     = llListReplaceList( aiNoseAlphaList    , [!llList2Integer( aiNoseAlphaList    , iFace)], iFace, iFace );
+    }
+    else if ( oNameString == "Head" )
+    {
+        aiOperatingList = aiHeadAlphaList     = llListReplaceList( aiHeadAlphaList    , [!llList2Integer( aiHeadAlphaList    , iFace)], iFace, iFace );
+    }
+
+    if ( oNameString != "Butt" && oNameString != "Collar" )
+    {
+        llSetLinkAlpha( iLinknum, llList2Integer( aiOperatingList    , iFace), iFace );
+    }
+    else
+    {
+        if ( oNameString  == "Butt" )
+        {
+            if ( bButtAlpha == TRUE )
+                llSetLinkPrimitiveParamsFast( iLinknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < 0.375, 0.250, 0 >,0.0]);
+            else
+                llSetLinkPrimitiveParamsFast( iLinknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < 0.375, -0.250, 0 >,0.0]);
+        }
+        else if ( oNameString == "Collar" )
+        {
+            if ( iFace <= 1 )
+            {
+                llSetLinkAlpha( iLinknum, llList2Integer( aiOperatingList    , iFace), iFace );
+            }
+            else if ( iFace == 2 )
+            {
+                if ( llList2Integer( aiOperatingList    , iFace) == TRUE )
+                    llSetLinkPrimitiveParamsFast( iLinknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < -0.125, 0.250, 0 >,0.0]);
+                else
+                    llSetLinkPrimitiveParamsFast( iLinknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < -0.125, -0.250, 0 >,0.0]);
+            }
+            if ( iFace == 3 )
+            {
+                if ( llList2Integer( aiOperatingList    , iFace) == TRUE )
+                    llSetLinkPrimitiveParamsFast( iLinknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < 0.125, 0.250, 0 >,0.0]);
+                else
+                    llSetLinkPrimitiveParamsFast( iLinknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < 0.125, -0.250, 0 >,0.0]);
+            }
+        }
+    }
+
+    llSay(iChannel, "Alpha|" + (string)iFace + "|" + oNameString );
+}
+
+HandleButtonsTouch(integer linknum, integer face)
+{
+    string linkname = llGetLinkName(linknum);
+    integer iTouchArea;
+    integer iListStartTemp = iListStart;
+
+    if ( !bIsRotating && !bIsMenuOn )
+    {
+    if(linkname == "Eyelashes")
+    {
+        if ( bIsEyelashesButtonChecked )
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.0]);
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        }
+        bIsEyelashesButtonChecked = !bIsEyelashesButtonChecked;
+        llSay(iChannel, "EyelashState|" + (string)face + "|" + (string)bIsEyelashesButtonChecked );
+    }
+        else
+        if(linkname == "Nipples")
+    {
+        if ( bIsNipplesButtonChecked )
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.0]);
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        }
+        bIsNipplesButtonChecked = !bIsNipplesButtonChecked;
+        llSay(iChannel, "NippleState|" + (string)face + "|" + (string)bIsNipplesButtonChecked );
+    }
+        else
+        if(linkname == "Nose")
+    {
+        if ( bIsNoseButtonChecked )
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        }
+        bIsNoseButtonChecked = !bIsNoseButtonChecked;
+        llSay(iChannel, "NoseState|" + (string)face + "|" + (string)bIsNoseButtonChecked );
+    }
+      else
+        if(linkname == "LeftHand")
+    {
+        iLeftHandGestureSelected++;
+        if ( iLeftHandGestureSelected > 6 )
+        {
+            iLeftHandGestureSelected = 0;
+        }
+        llSay(iChannel, "HandState|" + (string)0 + "|" + (string)iLeftHandGestureSelected );
+        llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, 4, kHandPoseTextureId, <-0.125, 1, 0.0>, < -0.4375 + 0.125 * iLeftHandGestureSelected, 0, 0 >,0.0]);
+    }
+        else
+        if(linkname == "RightHand")
+    {
+        iRightHandGestureSelected++;
+        if ( iRightHandGestureSelected > 6 )
+        {
+            iRightHandGestureSelected = 0;
+        }
+        llSay(iChannel, "HandState|" + (string)1 + "|" + (string)iRightHandGestureSelected );
+        llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, 4, kHandPoseTextureId, <0.125, 1, 0.0>, < -0.4375 + 0.125 * iRightHandGestureSelected, 0, 0 >,0.0]);
+    }
+        if(linkname == "FaceExpression_0" || linkname == "FaceExpression_1" || linkname == "FaceExpression_2" || linkname == "FaceExpression_3")
+    {
+        if ( (integer)Right( linkname, "_" ) != iExpressionSelected )
+        {
+            llSetLinkPrimitiveParamsFast( GetLinkNum (linkname), [PRIM_COLOR, 4, <1,1,1>, 1]);
+            llSetLinkPrimitiveParamsFast( GetLinkNum ("FaceExpression_" + (string)iExpressionSelected), [PRIM_COLOR, 4, <0.5,0.5,0.5>, 1]);
+
+            iExpressionSelected = (integer)Right( linkname, "_" );
+            llSay(iChannel, "FaceExpressionState|" + (string)face + "|" + (string)iExpressionSelected );
+        }
+    }
+    else
+        if ( Right(linkname, "_") == "Alpha" )
+    {
+        if ( Left( linkname, "_" ) == "UpperBack" )
+        {
+            linkname = "Collar";
+            face = 2;
+        }
+        if ( Left( linkname, "_" ) == "LowerBack" )
+        {
+            linkname = "Collar";
+            face = 3;
+        }
+        HandleAlpha( linkname, face, linknum );
+    }
+    else
+        if ( Left(linkname, "_") == "TailSize" )
+    {
+        llSetLinkPrimitiveParamsFast( GetLinkNum( "TailSize_" + (string)iTailSizeSelected ), [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( GetLinkNum( "TailSize_" + Right(linkname, "_") ), [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        iTailSizeSelected = (integer)Right(linkname, "_");
+        llSay(iChannel, "TailSize|" + (string)1 + "|" + (string)iTailSizeSelected );
+    }
+    else
+        if ( linkname == "ToungeState" )
+    {
+        iToungePoseSelected++;
+        if ( iToungePoseSelected > 3 )
+        {
+            iToungePoseSelected = 0;
+        }
+        llSay(iChannel, "ToungeState|" + (string)1 + "|" + (string)iToungePoseSelected );
+    }
+    else
+        if ( linkname == "Up" )
+    {
+        SetTextures ( ++iListStartTemp );
+    }
+    else
+        if ( linkname == "Down" )
+    {
+        SetTextures ( --iListStartTemp );
+    }
+    else
+        if ( linkname == "Stump" )
+    {
+        if ( bIsStumpButtonChecked )
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < -0.375, -0.250, 0 >,0.0]);
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < -0.375, 0.250, 0 >,0.0]);
+        }
+        bIsStumpButtonChecked = !bIsStumpButtonChecked;
+        llSay( iChannel, "StumpState|" + (string)bIsStumpButtonChecked );
+    }
+    else
+        if ( linkname == "0" || linkname == "1" || linkname == "2" || linkname == "3" || linkname == "4" || linkname == "5" || linkname == "6" || linkname == "7" )
+    {
+        if ( iTextureListSelected == 0 )
+            llSay ( iChannel,"Texture|" + (string)iTextureListSelected + "|" + llList2String( aiNoTailBaseTextureList, (integer)linkname + (iListStart * 2)) + "|" + llList2String( aiNoTailFemaleTextureList, (integer)linkname + (iListStart * 2)) );
+
+        if ( iTextureListSelected == 1 )
+            llSay ( iChannel,"Texture|" + (string)iTextureListSelected + "|" + llList2String( aiTailBaseTextureList, (integer)linkname + (iListStart * 2)) + "|" + llList2String( aiTailFemaleTextureList, (integer)linkname + (iListStart * 2)) );
+
+        if ( iTextureListSelected == 2 ) llSay( iChannel, "Texture|" + (string)iTextureListSelected + "|" + llList2String( aiEyesTextureList, (integer)linkname + (iListStart * 2)));
+
+        if ( iTextureListSelected == 3 ) llSay( iChannel, "Texture|" + (string)iTextureListSelected + "|" + llList2String( aiEyelashesTextureList, (integer)linkname + (iListStart * 2)));
+    }
+    else if ( linkname == "Applier" )
+    {
+        llDialog( llDetectedKey( 0 ), "What category do you want to add an applier for?\nBody includes tail and maw internals\nBody alt includes notail butt", ["Body", "Body Alt", "Lashes", "Iris"], 41);
+    }
+    else if ( Left( linkname, "_" ) == "List" )
+    {
+        iTextureListSelected = (integer)Right( linkname, "_" );
+        SetTextures( 0 );
+    }
+    else if(linkname == "Tail")
+    {
+        if ( bIsTailButtonChecked )
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        }
+        bIsTailButtonChecked = !bIsTailButtonChecked;
+        llSay(iChannel, "TailState|" + (string)face + "|" + (string)bIsTailButtonChecked );
+    }
+         else
+    if(linkname == "Vagina")
+    {
+        if ( bIsVaginaButtonChecked )
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        }
+        bIsVaginaButtonChecked = !bIsVaginaButtonChecked;
+        llSay(iChannel, "VaginaState|" + (string)face  + "|" + (string)(bIsVaginaButtonChecked) );
+    }
+        else
+    if(linkname == "Tail0")
+    {
+        iTailSelected = 0;
+        llSay(iChannel, "TailAnimState|" + (string)face + "|" + (string)iTailSelected );
+        llSetLinkPrimitiveParamsFast( iTail0Id, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        llSetLinkPrimitiveParamsFast( iTail1Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail2Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail3Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+    }
+         else
+    if(linkname == "Tail1")
+    {
+        iTailSelected = 1;
+        llSay(iChannel, "TailAnimState|" + (string)face + "|" + (string)iTailSelected );
+        llSetLinkPrimitiveParamsFast( iTail0Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail1Id, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        llSetLinkPrimitiveParamsFast( iTail2Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail3Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+    }
+         else
+    if(linkname == "Tail2")
+    {
+        iTailSelected = 2;
+        llSay(iChannel, "TailAnimState|" + (string)face + "|" + (string)iTailSelected );
+        llSetLinkPrimitiveParamsFast( iTail0Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail1Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail2Id, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        llSetLinkPrimitiveParamsFast( iTail3Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+    }
+         else
+    if(linkname == "Tail3")
+    {
+        iTailSelected = 3;
+        llSay(iChannel, "TailAnimState|" + (string)face + "|" + (string)iTailSelected );
+        llSetLinkPrimitiveParamsFast( iTail0Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail1Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail2Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        llSetLinkPrimitiveParamsFast( iTail3Id, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+    }
+    else
+        if(linkname == "TailSpeed")
+    {
+        if ( bIsTailFastTailChecked )
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0]);
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast( linknum, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+        }
+        bIsTailFastTailChecked = !bIsTailFastTailChecked;
+        llSay(iChannel, "TailSpeedState|" + (string)face + "|" + (string)bIsTailFastTailChecked );
+    }
+    }
+
+    if( linkname == llGetLinkName( 1 ) && !bIsRotating )
+    {
+        vector vRotAxis = llRot2Fwd( llGetLocalRot() );
+
+        if ( bIsMenuOn )
+        {
+            llTargetOmega( vRotAxis, - PI / 2 , 0.1 );
+        }
+        else
+        {
+            llTargetOmega( vRotAxis, PI / 2, 0.1 );
+        }
+        bIsRotating = TRUE;
+        llSetTimerEvent ( 1.0 );
+    }
+}
+
+Init ()
+{
+    iTail0Id = GetLinkNum ( "Tail0" );
+    iTail1Id = GetLinkNum ( "Tail1" );
+    iTail2Id = GetLinkNum ( "Tail2" );
+    iTail3Id = GetLinkNum ( "Tail3" );
+
+    aiLinkNumbers += GetLinkNum( "0" );
+    aiLinkNumbers += GetLinkNum( "1" );
+    aiLinkNumbers += GetLinkNum( "2" );
+    aiLinkNumbers += GetLinkNum( "3" );
+    aiLinkNumbers += GetLinkNum( "4" );
+    aiLinkNumbers += GetLinkNum( "5" );
+    aiLinkNumbers += GetLinkNum( "6" );
+    aiLinkNumbers += GetLinkNum( "7" );
+
+    llSay(iChannel, "TailAnimState|" + (string)iTailSelected + "|" + (string)iTailSelected );
+
+    llSetLinkPrimitiveParamsFast( iTail0Id, [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+    llSetLinkPrimitiveParamsFast( iTail1Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+    llSetLinkPrimitiveParamsFast( iTail2Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+    llSetLinkPrimitiveParamsFast( iTail3Id, [PRIM_COLOR, 4, <1,1,1>, 0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "TailSpeed" ), [PRIM_COLOR, 4, <1,1,1>, 0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Tail" ), [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Vagina" ), [PRIM_COLOR, 4, <1,1,1>, 0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Nose" ), [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Eyelashes" ), [PRIM_COLOR, 4, <1,1,1>, 0.99]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Nipples" ), [PRIM_COLOR, 4, <1,1,1>, 0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "TailSpeed" ), [PRIM_COLOR, 4, <1,1,1>, 0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Head_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Collar_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Neck_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Chest_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Belly_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Hands_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Arms_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "ForeArms_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Vag_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Hands_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Legs_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Feet_Alpha" ), [PRIM_COLOR, 4, <1,1,1>, 1]);
+
+    llSetLinkPrimitiveParamsFast( GetLinkNum( "UpperBack_Alpha" ), [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < -0.125, 0.250, 0 >,0.0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum( "LowerBack_Alpha" ), [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < 0.125, 0.250, 0 >,0.0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum( "Butt_Alpha" ), [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < 0.375, 0.250, 0 >,0.0]);
+
+    llSetLinkPrimitiveParamsFast( GetLinkNum( "Stump" ), [PRIM_TEXTURE, 4, kHighlightTextureId, <0.250, 0.5, 0.0>, < -0.375, -0.250, 0 >,0.0]);
+
+    llSetLinkPrimitiveParamsFast( GetLinkNum( "LeftHand" ), [PRIM_TEXTURE, 4, kHandPoseTextureId, <-0.125, 1, 0.0>, < -0.4375 + 0.125 * iLeftHandGestureSelected, 0, 0 >,0.0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum( "RightHand" ), [PRIM_TEXTURE, 4, kHandPoseTextureId, <0.125, 1, 0.0>, < -0.4375 + 0.125 * iRightHandGestureSelected, 0, 0 >,0.0]);
+
+    integer iCount = 0;
+    for ( iCount = 0; iCount < 4; iCount++ )
+    {
+        if ( iCount == iExpressionSelected )
+            llSetLinkPrimitiveParamsFast( GetLinkNum ("FaceExpression_" + (string)iCount), [PRIM_COLOR, 4, <1,1,1>, 1]);
+        else
+            llSetLinkPrimitiveParamsFast( GetLinkNum ("FaceExpression_" + (string)iCount), [PRIM_COLOR, 4, <0.5,0.5,0.5>, 1]);
+    }
+
+    for ( iCount = 0; iCount < 4; iCount++ )
+    {
+        llSetLinkPrimitiveParamsFast( GetLinkNum ( "TailSize_" + (string)iCount ), [PRIM_COLOR, 4, <1,1,1>, 0.99 * ( 1 && (iCount == iTailSizeSelected) )]);
+        llSetLinkPrimitiveParamsFast( GetLinkNum ( "Tail" + (string)iCount ), [PRIM_COLOR, 4, <1,1,1>, 0.99 * ( 1 && (iCount == iTailSelected) ) ]);
+    }
+
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Eyelids" ), [PRIM_TEXTURE, 4, kSliderTextureId, <1.0, 1.0, 0.0>, < -0.43, 0, 0 >,0.0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Boobs" ), [PRIM_TEXTURE, 4, kSliderTextureId, <1.0, 1.0, 0.0>, < 0.43 , 0, 0 >,0.0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Mouth" ), [PRIM_TEXTURE, 4, kSliderTextureId, <1.0, 1.0, 0.0>, < 0.43, 0, 0 >,0.0]);
+    llSetLinkPrimitiveParamsFast( GetLinkNum ( "Iris" ), [PRIM_TEXTURE, 4, kSliderTextureId, <1.0, 1.0, 0.0>, < 0, 0, 0 >,0.0]);
+
+    llSay(iChannel, "EyelashState|" + (string)0 + "|" + (string)bIsEyelashesButtonChecked );
+    llSay(iChannel, "NippleState|" + (string)0 + "|" + (string)bIsNipplesButtonChecked );
+    llSay(iChannel, "NoseState|" + (string)0 + "|" + (string)bIsNoseButtonChecked );
+    llSay(iChannel, "HandState|" + (string)0 + "|" + (string)iLeftHandGestureSelected );
+    llSay(iChannel, "HandState|" + (string)1 + "|" + (string)iRightHandGestureSelected );
+    llSay(iChannel, "FaceExpressionState|" + (string)0 + "|" + (string)iExpressionSelected );
+    llSay( iChannel, "StumpState|" + (string)bIsStumpButtonChecked );
+    llSay(iChannel, "TailState|" + (string)0 + "|" + (string)bIsTailButtonChecked );
+    llSay(iChannel, "VaginaState|" + (string)0  + "|" + (string)bIsVaginaButtonChecked );
+    llSay(iChannel, "TailAnimState|" + (string)0 + "|" + (string)iTailSelected );
+    llSay(iChannel, "TailSpeedState|" + (string)0 + "|" + (string)bIsTailFastTailChecked );
+
+    llSay(iChannel, "TailSize|" + (string)1 + "|" + (string)iTailSizeSelected );
+    llSay(iChannel, "ToungeState|" + (string)1 + "|" + (string)iToungePoseSelected );
+
+    SetTextures ( 0 );
+}
+
+
+default
+{
+    state_entry()
+    {
+        llSetLocalRot( llEuler2Rot( <0, 0, 0> ) );
+        llListen(41, "", llDetectedKey(0), "");
+        Init ();
+        llOwnerSay( "Free memory : " + (string)llGetFreeMemory() );
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+       if ( llGetOwnerKey( id ) == llGetOwner() )
+        {
+            if ( message == "Body" )
+            {
+                iApplierCategory = 1;
+                llTextBox(llGetOwner(), "Please input texture UUID's for Body.\n\nLine 1 for male\nLine 2 for female\n\nFormat UUID's L:R on one line if assymetric", 41);
+            }
+            else if ( message == "Body Alt" )
+            {
+                iApplierCategory = 0;
+                llTextBox(llGetOwner(), "Please input texture UUID's for Body Alt.\n\nLine 1 for male\nLine 2 for female\n\nFormat UUID's L:R on one line if assymetric", 41);
+            }
+            else if ( message == "Lashes" )
+            {
+                iApplierCategory = 3;
+                llTextBox(llGetOwner(), "Please input texture UUID for eyelashes.", 41);
+            }
+            else if ( message == "Iris" )
+            {
+                iApplierCategory = 2;
+                llTextBox(llGetOwner(), "Please input texture UUID for eyes.", 41);
+            }
+            else
+            {
+            list oParsedMessage = llParseString2List(message, ["\n"], []);
+            list oParsedLine;
+            if ( iApplierCategory == 0 ) // no tail
+            {
+                oParsedLine = llParseString2List( llList2String( oParsedMessage, 0), [":"], [] );
+                if ( llList2Key( oParsedLine, 0 ) )
+                {
+                     if ( llList2Key( oParsedLine, 1 ) )
+                        aiNoTailBaseTextureList    += llList2String( oParsedMessage, 0);
+                     else
+                        aiNoTailBaseTextureList    +=  llList2Key( oParsedLine, 0 );
+                }
+                else
+                {
+                    llOwnerSay ( "Inproper key for Body supplied, setting texture as none" );
+                    aiNoTailBaseTextureList += "none";
+                }
+
+                oParsedLine = llParseString2List( llList2String( oParsedMessage, 1), [":"], []);
+                if ( llList2Key( oParsedLine, 0 ) )
+                {
+                    if ( llList2Key( oParsedLine, 1 ) )
+                        aiNoTailFemaleTextureList    += llList2String( oParsedMessage, 1);
+                     else
+                        aiNoTailFemaleTextureList    +=  llList2Key( oParsedLine, 0 );
+                }
+                else
+                {
+                    llOwnerSay ( "Inproper key for BodyFemale supplied, setting texture as none" );
+                    aiNoTailFemaleTextureList += "none";
+                }
+            }
+            else if ( iApplierCategory == 1 ) //Tail
+            {
+                oParsedLine = llParseString2List( llList2String( oParsedMessage, 0), [":"], []);
+                if ( llList2Key( oParsedLine, 0 ) )
+                {
+                    if ( llList2Key( oParsedLine, 1 ) )
+                        aiTailBaseTextureList    += llList2String( oParsedMessage, 0);
+                    else
+                        aiTailBaseTextureList    +=  llList2Key( oParsedLine, 0 );
+                }
+                else
+                {
+                    llOwnerSay ( "Inproper key for Body supplied, setting texture as none" );
+                    aiTailBaseTextureList += "none";
+                }
+
+                oParsedLine = llParseString2List( llList2String( oParsedMessage, 1), [":"], []);
+                if ( llList2Key( oParsedLine, 0 ) )
+                {
+                    if ( llList2Key( oParsedLine, 1 ) )
+                        aiTailFemaleTextureList    += llList2String( oParsedMessage, 1);
+                    else
+                        aiTailFemaleTextureList    +=  llList2Key( oParsedLine, 0 );
+                }
+                else
+                {
+                    llOwnerSay ( "Inproper key for BodyFemale supplied, setting texture as none" );
+                    aiTailFemaleTextureList += "none";
+                }
+            }
+            else if ( iApplierCategory == 2 ) //eyes
+            {
+                oParsedLine = llParseString2List( llList2String( oParsedMessage, 0), [":"], []);
+                if ( llList2Key( oParsedLine, 0 ) )
+                {
+                    aiEyesTextureList   += llList2Key( oParsedLine, 0 );
+                }
+                else
+                {
+                    llOwnerSay ( "Inproper key for Eyes supplied, not setting texture, try again." );
+                }
+            }
+            else if ( iApplierCategory == 3 ) //eyelashes
+            {
+                oParsedLine = llParseString2List( llList2String( oParsedMessage, 0), [":"], []);
+                if ( llList2Key( oParsedLine, 0 ) )
+                {
+                    aiEyelashesTextureList   += llList2Key( oParsedLine, 0 );
+                }
+                else
+                {
+                    llOwnerSay ( "Inproper key for Eyelashes supplied, not setting texture, try again." );
+                    aiEyelashesTextureList += "none";
+                }
+            }
+            SetTextures ( iListStart );
+            }
+        }
+    }
+
+    timer ( )
+    {
+        vector vRotAxis = llRot2Fwd( llGetLocalRot() );
+
+        llTargetOmega ( -vRotAxis, 0, -0.1 );
+        if ( bIsMenuOn )  llSetLocalRot(llEuler2Rot(<0.0, 0.0, 0.0>) );
+        else  llSetLocalRot( llEuler2Rot(<PI/2, 0.0, 0.0>) );
+
+        bIsMenuOn = !bIsMenuOn;
+        bIsRotating = FALSE;
+        llSetTimerEvent(0.0);
+    }
+
+    touch(integer num)
+    {
+        while(num--)
+        {
+            HandleSlidersTouch(llDetectedLinkNumber(num), llDetectedTouchFace(num));
+        }
+    }
+
+    touch_end (integer num)
+    {
+        while(num--)
+        {
+            HandleButtonsTouch(llDetectedLinkNumber(num), llDetectedTouchFace(num));
+        }
+    }
+}
