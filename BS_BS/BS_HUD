@@ -1,0 +1,25 @@
+integer channel=-216;
+integer eyeSelect = 28;
+
+default
+{
+    state_entry()
+    {
+        ;
+    }
+
+    touch_start(integer num)
+    {
+        integer box = llDetectedLinkNumber(0);
+        if(box>20 & box<29)
+        {
+            if(box!=eyeSelect)
+                 llSetLinkAlpha(eyeSelect, 0.0, 2);
+            llSetLinkAlpha(box, 1.0, 2);
+            eyeSelect=box;
+            //llSetLinkPrimitiveParamsFast(box,[ PRIM_TEXTURE, 2, selectD, <0.8,0.8,0>, ZERO_FECTOR, 0] );
+        }
+        //llOwnerSay((string)box);
+        llSay(channel,llGetLinkName(box));
+    }
+}
