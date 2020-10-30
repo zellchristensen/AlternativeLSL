@@ -1,0 +1,49 @@
+integer channel=-216;
+key owner;
+integer currentLink;
+integer currentFace;
+
+default
+{
+    state_entry()
+    {
+        owner = llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_LINK)
+        {
+            ;
+        }
+        if (change & CHANGED_OWNER)
+        {
+            ;
+        }
+    }
+
+    touch_start(integer num)
+    {
+        llOwnerSay((string)llDetectedLinkNumber(0));
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==owner | llGetOwnerKey(id)==owner)
+        {
+            list a = llParseString2List(message,[" - "],[]);
+            if(llGetListLength(a)==1)
+            {
+                integer b = (integer)llList2String(a,0);
+                llSetAlpha(1.0,b);
+                llSetAlpha(0.0,currentLink);
+                currentLink=b;
+            }
+            else
+            {
+                
+            }
+        }
+    }
+}
