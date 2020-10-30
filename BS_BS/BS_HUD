@@ -13,11 +13,44 @@ default
         integer box = llDetectedLinkNumber(0);
         if(box>20 & box<29)
         {
-            if(box!=eyeSelect)
-                 llSetLinkAlpha(eyeSelect, 0.0, 2);
-            llSetLinkAlpha(box, 1.0, 2);
-            eyeSelect=box;
-            //llSetLinkPrimitiveParamsFast(box,[ PRIM_TEXTURE, 2, selectD, <0.8,0.8,0>, ZERO_FECTOR, 0] );
+            integer i = 21;
+            for(i;i<29;++i)
+            {
+                if(i==box)
+                    llSetLinkAlpha(i, 1.0, 2);
+                else
+                    llSetLinkAlpha(i, 0.0, 2);
+            }
+        }
+        else if((box<21 & box>12) | (box>7 & box<12))
+        {
+            integer i = 8;
+            for(i;i<12;++i)
+            {
+                if(i==box)
+                    llSetLinkAlpha(i, 1.0, 2);
+                else
+                    llSetLinkAlpha(i, 0.0, 2);
+            }
+
+            i=13;
+            for(i;i<21;++i)
+            {
+                if(i==box)
+                    llSetLinkAlpha(i, 1.0, 2);
+                else
+                    llSetLinkAlpha(i, 0.0, 2);
+            }
+        }
+        else if(box==6)
+        {
+            llSetLinkAlpha(6, 1.0, 2);
+            llSetLinkAlpha(7, 0.0, 2);
+        }
+        else if(box==7)
+        {
+            llSetLinkAlpha(7, 1.0, 2);
+            llSetLinkAlpha(6, 0.0, 2);
         }
         //llOwnerSay((string)box);
         llSay(channel,llGetLinkName(box));
