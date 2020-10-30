@@ -1,40 +1,21 @@
 integer channel=-216;
 key owner;
+integer eyelashes = 1;
 
-getLinks()
-{
-    integer max = llGetNumberOfPrims();
-    integer i = 0;
-    for(i;i<max;++i)
-    {
-        string n = llGetLinkName(i+1);
-        llOwnerSay((string)(i+1)+" "+n);
-    }
-}
 default
 {
     state_entry()
     {
-        //getLinks();
         owner = llGetOwner();
         llListen(channel,"",NULL_KEY,"");
     }
 
     changed(integer change)
     {
-        if (change & CHANGED_LINK)
-        {
-            getLinks();
-        }
         if (change & CHANGED_OWNER)
         {
-            ;
+            llResetScript();
         }
-    }
-
-    touch_start(integer num)
-    {
-        ;//llOwnerSay((string)llDetectedLinkNumber(0));
     }
 
     listen(integer channel, string name, key id, string message)
@@ -43,30 +24,42 @@ default
         {
             list a = llParseString2List(message,[" - "],[]);
             integer b;
+            //llOwnerSay(llList2CSV(a));
             if(llGetListLength(a)==1)
             {
-                b = (integer)llList2String(a,0);
-                llSetLinkAlpha(b, 1.0, ALL_SIDES);
-                integer i = 2;
-                for(i;i<10;++i)
+                string s = llList2String(a,0);
+                if(s=="!e-off")
+                    eyelashes=0;
+                else if(s=="!e-on")
+                    eyelashes=1;
+                else
                 {
-                    if(i==b)
+                    b = (integer)llList2String(a,0);
+                    integer i = 2;
+                    for(i;i<10;++i)
                     {
-                        llSetLinkAlpha(i, 1.0, ALL_SIDES);
-                    }
-                    else
-                    {
-                        llSetLinkAlpha(i, 0.0, ALL_SIDES);
-                    }
+                        if(i==b)
+                        {
+                            if(eyelashes)
+                                llSetLinkAlpha(i, 1.0, ALL_SIDES);
+                            else
+                            {
+                                llSetLinkAlpha(i, 1.0, 0);
+                                llSetLinkAlpha(i, 1.0, 2);
+                            }
+                        }
+                        else
+                        {
+                            llSetLinkAlpha(i, 0.0, ALL_SIDES);
+                        }
 
+                    }
                 }
             }
             else
             {
                 b = (integer)llList2String(a,0);;
                 integer c = (integer)llList2String(a,1);
-                llOwnerSay((string)b+","+(string)c);
-                llOwnerSay((string)llGetLinkNumberOfSides(b));
                 integer i=10;
 
                 for(i;i<16;++i)
@@ -81,11 +74,11 @@ default
                             else
                             {
                                 if(j==b)
-                                    llSetLinkAlpha(i, 1.0, j); 
+                                    llSetLinkAlpha(i, 1.0, j);
                                 else
                                     llSetLinkAlpha(i, 0.0, j);
                             }
-                            
+
                         }
                         llSetLinkAlpha(i, 1.0, c);
                     }
