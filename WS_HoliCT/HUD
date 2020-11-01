@@ -1,0 +1,89 @@
+integer on = TRUE;
+integer channel = -1553;
+
+default
+{
+    state_entry()
+    {
+        ;
+    }
+
+    touch_end(integer num)
+    {
+        integer f = llDetectedTouchFace(0);
+        if(f==2)
+        {
+            if(on)
+            {
+                llSetAlpha(0.0,1);
+                on=FALSE;
+            }
+            else
+            {
+                llSetAlpha(1.0,1);
+                on=TRUE;
+            }
+        }
+        else if(f==1)
+        {
+            vector v = llDetectedTouchUV(0);
+            if(v.x < 0.75 & v.x > 0.5)
+            {
+                if(v.y < 1.00 & v.y > 0.75)
+                {
+                    llSay(channel,"01");
+                }
+                else if(v.y < 0.75 & v.y > 0.5)
+                {
+                    llSay(channel,"02");
+                }
+                else if(v.y < 0.5 & v.y > 0.25)
+                {
+                    llSay(channel,"03");
+                }
+                else if(v.y < 0.25 & v.y > 0.0)
+                {
+                    llSay(channel,"04");
+                }
+            }
+            else if(v.x < 0.5 & v.x > 0.25)
+            {
+                if(v.y < 1.00 & v.y > 0.75)
+                {
+                    llSay(channel,"05");
+                }
+                else if(v.y < 0.75 & v.y > 0.5)
+                {
+                    llSay(channel,"06");
+                }
+                else if(v.y < 0.5 & v.y > 0.25)
+                {
+                    llSay(channel,"07");
+                }
+                else if(v.y < 0.25 & v.y > 0.0)
+                {
+                    llSay(channel,"08");
+                }
+            }
+            else if(v.x < 0.25 & v.x > 0.0)
+            {
+                if(v.y < 1.00 & v.y > 0.75)
+                {
+                    llSay(channel,"09");
+                }
+                else if(v.y < 0.75 & v.y > 0.5)
+                {
+                    llSay(channel,"10");
+                }
+                else if(v.y < 0.5 & v.y > 0.25)
+                {
+                    llSay(channel,"11");
+                }
+                else if(v.y < 0.25 & v.y > 0.0)
+                {
+                    llSay(channel,"12");
+                }
+            }
+        }
+    }
+}
