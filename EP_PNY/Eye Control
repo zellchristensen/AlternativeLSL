@@ -37,8 +37,8 @@ getTexture()
 {
     if(llGetInventoryNumber(INVENTORY_TEXTURE))
         llSetTexture(llGetInventoryName(INVENTORY_TEXTURE, 0), ALL_SIDES);
-    else
-        llSetTexture("2fa45086-8bef-3d29-c9d9-0e2fc11452cc", ALL_SIDES);
+    //else
+        //llSetTexture("2fa45086-8bef-3d29-c9d9-0e2fc11452cc", ALL_SIDES);
 }
 
 setBody(vector colour)
@@ -85,13 +85,13 @@ default
         else
             llResetScript();
     }
-    
+
     attach(key id)
     {
         if(id != NULL_KEY)
             llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS);
     }
-    
+
     on_rez(integer start_param)
     {
         if(llGetAttached())
