@@ -95,10 +95,15 @@ default
         OWNER = llGetOwner();
         getAnim();
         getLinks();
-        getPerms();
         llListen(88, "", NULL_KEY, "");
         llListen(1664846125, "", OWNER, "voice");
         llSetTimerEvent(0.25);
+    }
+
+    on_rez(integer start_param)
+    {
+        if(llGetAttached())
+            getPerms();
     }
 
     attach(key id)
