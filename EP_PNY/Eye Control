@@ -56,7 +56,7 @@ setCell(vector colour)
 }
 
 default
-{    
+{
     changed(integer c)
     {
         if(c & CHANGED_INVENTORY)
@@ -66,23 +66,36 @@ default
         else if(c & CHANGED_OWNER)
             llResetScript();
     }
-    
+
     state_entry()
     {
+        if(llGetAttached())
+            llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS);
         caution();
         getLinks();
         OWNER = llGetOwner();
         llListen(88, "", NULL_KEY, "");
-        llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS);
         llSetTimerEvent(1.0);
     }
-    
+
     run_time_permissions(integer p)
     {
         if(p & PERMISSION_TAKE_CONTROLS)
             llTakeControls(CONTROL_FWD, TRUE, TRUE);
         else
             llResetScript();
+    }
+    
+    attach(key id)
+    {
+        if(id != NULL_KEY)
+            llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS);
+    }
+    
+    on_rez(integer start_param)
+    {
+        if(llGetAttached())
+            llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS);
     }
 
     listen(integer c, string n, key id, string m)
