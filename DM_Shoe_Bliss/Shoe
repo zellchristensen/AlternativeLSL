@@ -1,0 +1,28 @@
+key owner;
+integer channel = -53;
+
+default
+{
+    state_entry()
+    {
+        owner = llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER)
+        {
+            llResetScript();
+        }
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==owner | llGetOwnerKey(id)==owner)
+        {
+            list L = llParseString2List(message, ["|"], []);
+            llSetLinkPrimitiveParamsFast((integer)llList2String(L,0),[PRIM_TEXTURE, ALL_SIDES, llList2String(L,1), <1.0,1.0,0>, ZERO_VECTOR, 0 ] );
+        }
+    }
+}
