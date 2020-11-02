@@ -21,8 +21,17 @@ default
     {
         if(id==owner | llGetOwnerKey(id)==owner)
         {
-            list L = llParseString2List(message, ["|"], []);
-            llSetLinkPrimitiveParamsFast((integer)llList2String(L,0),[PRIM_TEXTURE, ALL_SIDES, llList2String(L,1), <1.0,1.0,0>, ZERO_VECTOR, 0 ] );
+            list L = llParseString2List(message, [":",","," "], []);
+            if(llList2String(L,0)=="Texture")
+            {
+                string text = (string)llList2String(L,2);
+                integer link = (integer)llList2String(L,1);
+                ++link;
+                llOwnerSay((string)link);
+                list params = llGetLinkPrimitiveParams(link,[PRIM_TEXTURE,ALL_SIDES]);
+                //llSetLinkTexture(link,text,ALL_SIDES);
+                llSetLinkPrimitiveParamsFast(link, [PRIM_TEXTURE, ALL_SIDES,text]+llList2List(params,1,3));
+            }
         }
     }
 }
