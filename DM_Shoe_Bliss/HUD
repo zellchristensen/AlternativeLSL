@@ -1,0 +1,15 @@
+key owner;
+integer channel = -53;
+
+default
+{
+    state_entry()
+    {
+        ;
+    }
+
+    touch_start(integer num)
+    {
+        llSay(channel,llList2CSV(llGetLinkPrimitiveParams(llDetectedLinkNumber(0),[PRIM_NAME,PRIM_DESC])));
+    }
+}
