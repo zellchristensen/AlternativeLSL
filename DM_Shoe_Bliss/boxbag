@@ -14,7 +14,7 @@ default
     touch_end(integer num)
     {
         if(llDetectedKey(0)==llGetOwner())
-            llGiveInventoryList(llGetOwner(), llGetObjectName(), ["De Masco :: Shoes / BLISS / Master HUD","De Masco :: Shoes // Bliss"]);
+            llGiveInventoryList(llGetOwner(), llGetObjectName(), ["De Masco :: Shoes / BLISS / Master HUD","De Masco :: Shoes / Bliss"]);
     }
 
     run_time_permissions(integer perm)
