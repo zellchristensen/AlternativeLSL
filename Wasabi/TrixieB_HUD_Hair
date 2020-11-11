@@ -1,0 +1,14 @@
+integer channel=-174112;
+
+default
+{
+    state_entry()
+    {
+        ;
+    }
+
+    touch_start(integer num)
+    {
+        llSay(channel, "h"+llGetLinkName(llDetectedLinkNumber(0)));
+    }
+}
