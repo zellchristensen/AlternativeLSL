@@ -1,0 +1,105 @@
+integer channel=-174112;
+key ownerKey;
+
+list accessories = ["2992dfed-f9d0-9cc1-a739-6224e756146a",
+"1bd547a9-5a5c-3a03-9598-c13ead6fc1d4",
+"c82e0c89-2f32-a6d1-755e-ae9120a1d943",
+"c857b352-c016-14ee-2a11-39dd11e40ad0",
+"db305191-fbdd-ba33-5503-600b4ee113e2",
+"3d9a0129-aad8-44a1-b6be-af6190199e8c",
+"26b5336c-6189-86a1-963b-a5b103337f37",
+"5bdcf918-58cf-a986-7519-7dcf1bc205e6",
+"1673ffb6-a53c-416e-737a-aef603b586b2",
+"b2d24acb-ae81-4960-7e81-bbaba0c79fdf",
+"470c847e-5bcc-c92e-62cc-14ce49ada489",
+"07342dc4-cfe2-cce7-ea9c-c56504828312",
+"c5e3d43f-806a-735f-ad35-c7e03a4b4c8c",
+"99ab4097-dc6c-6b1c-af30-a54c23197211",
+"b4958317-91c1-f64c-6752-8f33765bee15",
+"4ac682be-6610-410d-a2d9-51536654d6c9"];
+
+list alphas = ["d90ea931-13a1-f81f-84b3-3a50aa5729a5",
+"8c104485-fbb9-d622-b39f-a2a0d8a57588",
+"cfab704f-e5da-a733-ff4a-251c293dca96",
+"1b47f6ac-8267-3366-77eb-c2ae1828c8e8",
+"a6410aeb-33d5-0e5e-be3e-748ff12c6b9f",
+
+"28a57ca5-35d4-9bed-ef30-c4a688f0251d",
+"3237998c-28a0-aa05-c68c-e674496151f6",
+"dc95e76b-0797-dcc7-e255-61d4f37be0e8",
+"b650d998-c8ae-dee0-fa61-1de49dc88c6f",
+"148107d3-21e9-40b2-9b6c-64442fc1f402",
+
+"0844606c-f095-4fa4-7273-edb4665c7952",
+"c6961b28-74ef-c857-b124-3689d323dae1",
+"cf1fefef-ed7b-ff58-65ef-2e6ff6e56959",
+"a4be6309-7aec-ff85-b56a-3312a8dc6a45",
+"fe048e68-e007-402e-dbe9-fc00dfaf4a20",
+
+"b995cacb-500c-1ef6-28ab-07324b138ecb",
+"02805463-1f8f-ec65-cb8d-fda4e7003758",
+"d2f8074b-ceb0-c08a-9eb9-b6530077fa87",
+"c830345c-8fde-ddfd-5616-ef034d325cab",
+"14b6c996-0be4-72eb-c4fc-dc6379eaa05d"];
+
+list solid = ["969de25e-03c5-756f-1456-0bbfcdbf7b83",
+"bc46352a-d4eb-56f0-10ea-e8df2eeb1eae",
+"59a94214-9cba-b1c5-31f2-15218c80c9a8",
+"e39061ac-88ac-74ab-d15e-bf5ff3fc8799",
+"da1cebed-387f-5296-b13d-61c730e8ea9d",
+
+"4108fbe9-c33e-1b1f-8524-8b3063a81511",
+"0e8a8c07-a605-53b3-4064-3913f4f639a1",
+"a843e3c5-587a-a659-affd-3183515a7f99",
+"687bde20-0e79-552b-ead8-60144e394b94",
+"eb2a2945-99ed-b31e-7e5d-d425ce052758",
+
+"1f5a7dfb-85de-60b2-ce0e-af1d8be7e428",
+"e9e290f3-625b-ebda-eb3d-d833ab05a18f",
+"15067457-f5d2-6839-1e7a-e6bfa7e654f1",
+"d8a8d6c8-464b-2654-6fce-62e8e41e116e",
+"fdc76e30-4a76-7d2c-3ce1-113954b9e4a0",
+
+"cd9674cd-4d88-844f-cab8-34884593f293",
+"6eed805a-d1e7-e7c9-b6ce-a7b370a444fe",
+"63c96d22-021c-c9e2-399a-b44f28e10841",
+"166aa1ea-ce81-f7a6-cee3-12e390e36c34",
+"17f5add2-533b-32a3-bfd9-d7685dffaaea"];
+
+default
+{
+    state_entry()
+    {
+        ownerKey = llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER)
+        {
+            llResetScript();
+        }
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==ownerKey | llGetOwnerKey(id)==ownerKey)
+        {
+            list l = llParseString2List(message,"|","");
+            string s = llList2String(l,0);
+            integer pos = (integer)llList2String(l,1);
+            if(s=="a")
+            {
+                llSetLinkTexture(2,llList2String(accessories,pos),4);
+            }
+            else if(s=="h")
+            {
+                llSetLinkTexture(2,llList2String(solid,pos),0);
+                llSetLinkTexture(2,llList2String(solid,pos),2);
+                llSetLinkTexture(2,llList2String(alphas,pos),1);
+                llSetLinkTexture(2,llList2String(alphas,pos),3);
+            }
+        }
+    }
+}
