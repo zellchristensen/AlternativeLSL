@@ -28,23 +28,23 @@ default
                 {
                     if(llList2String(p,2)=="b")
                     {
-                        llSetLinkTexture(1, "778965bb-774d-c078-188c-4f1c99e8ba34", 2);
-                        llSetLinkTexture(3, "a7b53da7-06ea-e9c5-3de9-2d2d491b1001", 2);
+                        llSetLinkTexture(1, "778965bb-774d-c078-188c-4f1c99e8ba34", 0);
+                        llSetLinkTexture(3, "a7b53da7-06ea-e9c5-3de9-2d2d491b1001", 0);
                     }
                     else if(llList2String(p,2)=="g")
                     {
-                        llSetLinkTexture(1, "6e1ce3eb-cd0a-3cb9-253b-47efda4c9817", 2);
-                        llSetLinkTexture(3, "0085711c-c592-0032-613f-c7bb8a3ac234", 2);
+                        llSetLinkTexture(1, "6e1ce3eb-cd0a-3cb9-253b-47efda4c9817", 0);
+                        llSetLinkTexture(3, "0085711c-c592-0032-613f-c7bb8a3ac234", 0);
                     }
                     else if(llList2String(p,2)=="p")
                     {
-                        llSetLinkTexture(1, "e4ea6b4c-99c6-a1ad-d550-660694f2ca35", 2);
-                        llSetLinkTexture(3, "d87644b3-7dba-0ae3-ab0a-4eb895fe59c9", 2);
+                        llSetLinkTexture(1, "e4ea6b4c-99c6-a1ad-d550-660694f2ca35", 0);
+                        llSetLinkTexture(3, "d87644b3-7dba-0ae3-ab0a-4eb895fe59c9", 0);
                     }
                     else if(llList2String(p,2)=="w")
                     {
-                        llSetLinkTexture(1, "96d606d2-4f8b-5eb4-46eb-002fedc06510", 2);
-                        llSetLinkTexture(3, "da37ac05-1681-908c-0342-92a2757e54b5", 2);
+                        llSetLinkTexture(1, "96d606d2-4f8b-5eb4-46eb-002fedc06510", 0);
+                        llSetLinkTexture(3, "da37ac05-1681-908c-0342-92a2757e54b5", 0);
                     }
                 }
                 else if(llList2String(p,1)=="b")
