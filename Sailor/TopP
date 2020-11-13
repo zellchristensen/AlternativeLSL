@@ -87,7 +87,6 @@ default
                     }
                 }
             }
-            llSetLinkPrimitiveParamsFast(LINK_THIS,[PRIM_TEXTURE, ALL_SIDES, message, <1.0,1.0,0>, ZERO_VECTOR, 0 ] );
         }
     }
 }
