@@ -22,7 +22,52 @@ default
         if(id==owner | llGetOwnerKey(id)==owner)
         {
             list p = llParseString2List(message,"|","");
-            if(llList2String(p,0)=="s")
+            if(llList2String(p,0)=="c")
+            {
+                if(llList2String(p,1)=="s")
+                {
+                    if(llList2String(p,2)=="b")
+                    {
+                        llSetLinkTexture(1, "7851cbd5-c515-7651-4282-68a05e7c969c", ALL_SIDES);
+                        llSetLinkTexture(2, "7851cbd5-c515-7651-4282-68a05e7c969c", ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="g")
+                    {
+                        llSetLinkTexture(1, "daa21bbd-50ff-d515-3da8-4079651a6160", ALL_SIDES);
+                        llSetLinkTexture(2, "daa21bbd-50ff-d515-3da8-4079651a6160", ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="p")
+                    {
+                        llSetLinkTexture(1, "d75df6af-f3e9-00bd-0ac1-0b4018a376aa", ALL_SIDES);
+                        llSetLinkTexture(2, "d75df6af-f3e9-00bd-0ac1-0b4018a376aa", ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="w")
+                    {
+                        llSetLinkTexture(1, "b175847d-ec49-c97b-4424-5be1556ecc9f", ALL_SIDES);
+                        llSetLinkTexture(2, "b175847d-ec49-c97b-4424-5be1556ecc9f", ALL_SIDES);
+                    }
+                }
+                else if(llList2String(p,1)=="b")
+                {
+                    if(llList2String(p,2)=="b")
+                    {
+                        llSetLinkTexture(2, "4854e69a-6268-f90b-4ae7-628320c817d4", 0);
+                    }
+                    else if(llList2String(p,2)=="g")
+                    {
+                        llSetLinkTexture(2, "fc447ca2-cbcd-de7d-c7e1-1e5826b1da16", 0);
+                    }
+                    else if(llList2String(p,2)=="p")
+                    {
+                        llSetLinkTexture(2, "1895f211-0093-5a36-bbbd-193d897258a4", 0);
+                    }
+                    else if(llList2String(p,2)=="w")
+                    {
+                        llSetLinkTexture(2, "ae3143ee-fbfe-b7ea-e1f1-0acd641da960", 0);
+                    }
+                }
+            }
+            else if(llList2String(p,0)=="s")
             {
                 if(llList2String(p,1)=="s")
                 {
