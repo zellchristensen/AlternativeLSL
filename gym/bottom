@@ -1,0 +1,77 @@
+integer channel = -22062;
+key owner;
+
+default
+{
+    state_entry()
+    {
+        owner = llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER)
+        {
+            llResetScript();
+        }
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==owner | llGetOwnerKey(id)==owner)
+        {
+            list p = llParseString2List(message,"|","");
+            if(llList2String(p,0)=="c")
+            {
+                if(llList2String(p,1)=="s")
+                {
+                    if(llList2String(p,2)=="w")
+                    {
+                        llSetLinkTexture(1, "61ce1ebc-3137-48e4-90fb-04f2d23912d1", 0);
+                        llSetLinkTexture(1, "2c6fdba6-5f48-2b31-c621-b8bb67d541ef", 1);
+                        llSetLinkTexture(2, "1cea33bd-d419-b306-3612-472d4a381b0e", 0);
+                        llSetLinkTexture(2, "b2659d45-5ba1-3bca-2e21-0281680092bf", 1);
+                    }
+                    else if(llList2String(p,2)=="b")
+                    {
+                        llSetLinkTexture(1, "4cc18ad6-68b3-770a-3e7e-4f0a4e50b693", 0);
+                        llSetLinkTexture(1, "6d0ed193-3039-20d2-72bc-c40bf26d4a4a", 1);
+                        llSetLinkTexture(2, "382dbcba-1d6c-f2f3-1391-0e790675d038", 0);
+                        llSetLinkTexture(2, "65f20d8b-861d-5f87-a437-84654fb3ca20", 1);
+                    }
+                    else if(llList2String(p,2)=="r")
+                    {
+                        llSetLinkTexture(1, "be68da8d-ebfc-d8bf-8e45-6aecf82d6881", 0);
+                        llSetLinkTexture(1, "a582dd10-8dc8-8c33-d31b-28829f45aa10", 1);
+                        llSetLinkTexture(2, "bf1c756b-9763-516b-6c46-38ba8068cdde", 0);
+                        llSetLinkTexture(2, "cf6502b9-218f-288a-9517-17969f8fe314", 1);
+                    }
+                    else if(llList2String(p,2)=="g")
+                    {
+                        llSetLinkTexture(1, "3338637d-b1fc-2839-0cf8-eb656f160888", 1);
+                        llSetLinkTexture(1, "521d5c35-2b5d-0e16-ea81-50537283bd5c", 0);
+                        llSetLinkTexture(2, "8887f536-6819-0391-9b6f-ca339e1c6acc", 1);
+                        llSetLinkTexture(2, "f893f5ec-5bb3-a704-c129-524872c36d8c", 0);
+                    }
+                }
+            }
+            else if(llList2String(p,0)=="s")
+            {
+                if(llList2String(p,1)=="b")
+                {
+                    if(llList2String(p,2)=="o")
+                    {
+                         llSetLinkAlpha(1, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(2, 1.0, ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="c")
+                    {
+                         llSetLinkAlpha(2, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(1, 1.0, ALL_SIDES);
+                    }
+                }
+            }
+        }
+    }
+}
