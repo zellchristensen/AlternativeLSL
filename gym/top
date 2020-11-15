@@ -1,0 +1,88 @@
+integer channel = -22062;
+key owner;
+integer i=0;
+integer length;
+
+list label = ["687c9e21-b2da-0c95-7e0d-fb1a9e5ee2ac",
+                "02a376fa-d919-0d8d-6959-0174ac042664",
+                "be8e09d3-a95e-ca72-5931-af2b97c12f07",
+                "8470db8f-d0c6-b880-c542-2c80d20f2d32",
+                "363af22b-d65c-9f3a-920c-a4b0ab4ccff6"];
+
+default
+{
+    state_entry()
+    {
+        length=llGetListLength(label);
+        owner = llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER)
+        {
+            llResetScript();
+        }
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==owner | llGetOwnerKey(id)==owner)
+        {
+            list p = llParseString2List(message,"|","");
+            if(llList2String(p,0)=="c")
+            {
+                if(llList2String(p,1)=="s")
+                {
+                    if(llList2String(p,2)=="w")
+                    {
+                        llSetLinkTexture(1, "30b071f2-809f-fae1-d993-811bcc18c013", 2);
+                        llSetLinkTexture(2, "30b071f2-809f-fae1-d993-811bcc18c013", 2);
+                    }
+                    else if(llList2String(p,2)=="b")
+                    {
+                        llSetLinkTexture(1, "4288f372-8964-bc94-f6bb-6c16daff9a5c", 2);
+                        llSetLinkTexture(2, "4288f372-8964-bc94-f6bb-6c16daff9a5c", 2);
+                    }
+                    else if(llList2String(p,2)=="r")
+                    {
+                        llSetLinkTexture(1, "02343a13-4816-4a5f-83a1-1b1e767b2dea", 2);
+                        llSetLinkTexture(2, "02343a13-4816-4a5f-83a1-1b1e767b2dea", 2);
+                    }
+                    else if(llList2String(p,2)=="g")
+                    {
+                        llSetLinkTexture(1, "62e4249d-ae47-b4f3-57ab-c6e21ef87ed5", 2);
+                        llSetLinkTexture(2, "62e4249d-ae47-b4f3-57ab-c6e21ef87ed5", 2);
+                    }
+                }
+                else if(llList2String(p,1)=="d")
+                {
+                    if(llList2String(p,2)=="s")
+                    {
+                        ++i;
+                        if(i==length)
+                            i=0;
+                        llSetLinkTexture(1, llList2String(label,i), 3);
+                    }
+                }
+            }
+            else if(llList2String(p,0)=="s")
+            {
+                if(llList2String(p,1)=="s")
+                {
+                    if(llList2String(p,2)=="o")
+                    {
+                         llSetLinkAlpha(1, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(2, 1.0, ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="c")
+                    {
+                         llSetLinkAlpha(2, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(1, 1.0, ALL_SIDES);
+                    }
+                }
+            }
+        }
+    }
+}
