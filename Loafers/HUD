@@ -1,0 +1,52 @@
+integer channel = -31472;
+
+default
+{
+    state_entry()
+    {
+        ;
+    }
+
+    touch_start(integer num)
+    {
+        integer link = llDetectedLinkNumber(0);
+        integer face = llDetectedTouchFace(0);
+        vector  touchUV   = llDetectedTouchUV(0);
+        if(link==1)
+        {
+            if(face==1)
+            {
+                if(touchUV.y>0.5)
+                {
+                    if(touchUV.x<(1.0/3.0))
+                    {
+                        llSay(channel,"c|s|w");
+                    }
+                    else if(touchUV.x<(2.0/3.0))
+                    {
+                        llSay(channel,"c|s|g");
+                    }
+                    else if(touchUV.x<1.0)
+                    {
+                        llSay(channel,"c|s|b");
+                    }
+                }
+                else if(touchUV.y>0.0)
+                {
+                    if(touchUV.x<(1.0/3.0))
+                    {
+                        llSay(channel,"c|l|b");
+                    }
+                    else if(touchUV.x<(2.0/3.0))
+                    {
+                        llSay(channel,"c|l|g");
+                    }
+                    else if(touchUV.x<1.0)
+                    {
+                        llSay(channel,"c|l|w");
+                    }
+                }
+            }
+        }
+    }
+}
