@@ -37,23 +37,23 @@ default
                 {
                     if(llList2String(p,2)=="w")
                     {
-                        llSetLinkTexture(1, "b6c79ab2-b44a-f706-4dba-3df9fa66dd72", 1);
-                        llSetLinkTexture(2, "63498b3b-43dd-b1f1-bdfc-6514db9536fb", 1);
+                        llSetLinkTexture(2, "b6c79ab2-b44a-f706-4dba-3df9fa66dd72", 1);
+                        llSetLinkTexture(1, "63498b3b-43dd-b1f1-bdfc-6514db9536fb", 1);
                     }
                     else if(llList2String(p,2)=="b")
                     {
-                        llSetLinkTexture(1, "d65f47ef-bc3e-2873-24a9-3093804468c5", 1);
-                        llSetLinkTexture(2, "ecd55408-2204-3646-98e3-dd889905e93e", 1);
+                        llSetLinkTexture(2, "d65f47ef-bc3e-2873-24a9-3093804468c5", 1);
+                        llSetLinkTexture(1, "ecd55408-2204-3646-98e3-dd889905e93e", 1);
                     }
                     else if(llList2String(p,2)=="r")
                     {
-                        llSetLinkTexture(1, "ac6de421-7004-a7c4-9dfb-9da7c71c8d02", 1);
-                        llSetLinkTexture(2, "64976d02-5e4d-0089-68a2-4bfce7389281", 1);
+                        llSetLinkTexture(2, "ac6de421-7004-a7c4-9dfb-9da7c71c8d02", 1);
+                        llSetLinkTexture(1, "64976d02-5e4d-0089-68a2-4bfce7389281", 1);
                     }
                     else if(llList2String(p,2)=="g")
                     {
-                        llSetLinkTexture(1, "622c3924-1d20-0ab2-7ee3-01f7b0340fcb", 1);
-                        llSetLinkTexture(2, "45316528-ac3b-a9a5-7c5f-e0ee932e8cee", 1);
+                        llSetLinkTexture(2, "622c3924-1d20-0ab2-7ee3-01f7b0340fcb", 1);
+                        llSetLinkTexture(1, "45316528-ac3b-a9a5-7c5f-e0ee932e8cee", 1);
                     }
                 }
                 else if(llList2String(p,1)=="d")
@@ -74,13 +74,13 @@ default
                 {
                     if(llList2String(p,2)=="o")
                     {
-                         llSetLinkAlpha(1, 0.0, ALL_SIDES);
-                         llSetLinkAlpha(2, 1.0, ALL_SIDES);
+                         llSetLinkAlpha(2, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(1, 1.0, ALL_SIDES);
                     }
                     else if(llList2String(p,2)=="c")
                     {
-                         llSetLinkAlpha(2, 0.0, ALL_SIDES);
-                         llSetLinkAlpha(1, 1.0, ALL_SIDES);
+                         llSetLinkAlpha(1, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(2, 1.0, ALL_SIDES);
                     }
                 }
             }
