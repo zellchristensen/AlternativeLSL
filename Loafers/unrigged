@@ -1,0 +1,48 @@
+integer channel = -31472;
+key owner;
+
+default
+{
+    state_entry()
+    {
+        owner = llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER)
+        {
+            llResetScript();
+        }
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==owner | llGetOwnerKey(id)==owner)
+        {
+            list p = llParseString2List(message,"|","");
+            if(llList2String(p,0)=="c")
+            {
+                if(llList2String(p,1)=="l")
+                {
+                    if(llList2String(p,2)=="w")
+                    {
+                        llSetLinkTexture(0, "fd07e23e-a607-20ff-b34e-5058615caa46", 0);
+                        llSetLinkTexture(0, "548d0677-bfba-09a9-e5fc-c303eefb49dd", 1);
+                    }
+                    else if(llList2String(p,2)=="g")
+                    {
+                        llSetLinkTexture(0, "992fb25b-5d02-bffb-88f4-58f4a28eb0b8", 0);
+                        llSetLinkTexture(0, "1ee1a22f-59bb-654b-9d5e-5a0d70a4fc63", 1);
+                    }
+                    else if(llList2String(p,2)=="b")
+                    {
+                        llSetLinkTexture(0, "229f5d7f-577c-cb73-8b77-5e435fa6a4e6", 0);
+                        llSetLinkTexture(0, "80f564e3-b109-c3d9-0d25-2d463d3dfd51", 1);
+                    }
+                }
+            }
+        }
+    }
+}
