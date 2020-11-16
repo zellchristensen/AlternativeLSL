@@ -1,4 +1,4 @@
-integer channel = -62016;
+integer channel = -17013;
 
 default
 {
@@ -9,102 +9,60 @@ default
 
     touch_start(integer num)
     {
+        integer link = llDetectedLinkNumber(0);
         integer face = llDetectedTouchFace(0);
         vector  touchUV   = llDetectedTouchUV(0);
-        if(face==1)
+        if(link==1)
         {
-            if(touchUV.y>0.75)
+            if(face==1)
             {
-                if(touchUV.x<0.2)
+                if(touchUV.y>0.5)
                 {
-                    llSay(channel,"c|c|b");
+                    if(touchUV.x<0.25)
+                    {
+                        llSay(channel,"c|s|w");
+                    }
+                    else if(touchUV.x<0.5)
+                    {
+                        llSay(channel,"c|s|b");
+                    }
+                    else if(touchUV.x<0.75)
+                    {
+                        llSay(channel,"s|s|c");
+                    }
+                    else if(touchUV.x<1.0)
+                    {
+                        llSay(channel,"s|b|c");
+                    }
                 }
-                else if(touchUV.x<0.4)
+                else if(touchUV.y>0.0)
                 {
-                    llSay(channel,"c|s|b");
-                }
-                else if(touchUV.x<0.6)
-                {
-                    llSay(channel,"c|c|g");
-                }
-                else if(touchUV.x<0.8)
-                {
-                    llSay(channel,"c|s|g");
-                }
-                else if(touchUV.x<1.0)
-                {
-                    llSay(channel,"c|b|b");
+                    if(touchUV.x<0.25)
+                    {
+                        llSay(channel,"c|s|r");
+                    }
+                    else if(touchUV.x<0.5)
+                    {
+                        llSay(channel,"c|s|g");
+                    }
+                    else if(touchUV.x<0.75)
+                    {
+                        llSay(channel,"s|s|o");
+                    }
+                    else if(touchUV.x<1.0)
+                    {
+                        llSay(channel,"s|b|o");
+                    }
                 }
             }
-            else if(touchUV.y>0.5)
-            {
-                if(touchUV.x<0.2)
-                {
-                    llSay(channel,"c|c|p");
-                }
-                else if(touchUV.x<0.4)
-                {
-                    llSay(channel,"c|s|p");
-                }
-                else if(touchUV.x<0.6)
-                {
-                    llSay(channel,"c|c|w");
-                }
-                else if(touchUV.x<0.8)
-                {
-                    llSay(channel,"c|s|w");
-                }
-                else if(touchUV.x<1.0)
-                {
-                    llSay(channel,"c|b|r");
-                }
-            }
-            else if(touchUV.y>0.25)
-            {
-                if(touchUV.x<0.2)
-                {
-                    llSay(channel,"s|t|c");
-                }
-                else if(touchUV.x<0.4)
-                {
-                    llSay(channel,"s|s|c");
-                }
-                else if(touchUV.x<0.6)
-                {
-                    llSay(channel,"s|b|c");
-                }
-                else if(touchUV.x<0.8)
-                {
-                    llSay(channel,"s|p|c");
-                }
-                else if(touchUV.x<1.0)
-                {
-                    llSay(channel,"c|b|w");
-                }
-            }
-            else if(touchUV.y>0.0)
-            {
-                if(touchUV.x<0.2)
-                {
-                    llSay(channel,"s|t|o");
-                }
-                else if(touchUV.x<0.4)
-                {
-                    llSay(channel,"s|s|o");
-                }
-                else if(touchUV.x<0.6)
-                {
-                    llSay(channel,"s|b|o");
-                }
-                else if(touchUV.x<0.8)
-                {
-                    llSay(channel,"s|p|o");
-                }
-                else if(touchUV.x<1.0)
-                {
-                    llSay(channel,"c|b|p");
-                }
-            }
+        }
+        else if(link==2)
+        {
+            llSay(channel,"c|d|s");
+        }
+        else if(link==3)
+        {
+            llSay(channel,"c|d|u");
         }
     }
 }
