@@ -62,7 +62,7 @@ default
         }
         else if(link==3)
         {
-            llSay(channel,"c|d|u");
+            llTextBox(llDetectedKey(0), "Paste the UUID for a texture.", channel );
         }
     }
 }
