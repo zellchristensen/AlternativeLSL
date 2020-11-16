@@ -83,6 +83,10 @@ default
                     }
                 }
             }
+            else
+            {
+                llSetLinkTexture(1, message, 3);
+            }
         }
     }
 }
