@@ -1,0 +1,61 @@
+integer channel = -62017;
+key owner;
+
+default
+{
+    state_entry()
+    {
+        owner = llGetOwner();
+        llListen(channel,"",NULL_KEY,"");
+    }
+
+    changed(integer change)
+    {
+        if (change & CHANGED_OWNER)
+        {
+            llResetScript();
+        }
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==owner | llGetOwnerKey(id)==owner)
+        {
+            list p = llParseString2List(message,"|","");
+            if(llList2String(p,0)=="s")
+            {
+                if(llList2String(p,1)=="s")
+                {
+                    if(llList2String(p,2)=="o")
+                    {
+                         llSetLinkAlpha(1, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(2, 1.0, ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="c")
+                    {
+                         llSetLinkAlpha(2, 0.0, ALL_SIDES);
+                         llSetLinkAlpha(1, 1.0, ALL_SIDES);
+                    }
+                }
+            }
+            else if(llList2String(p,0)=="c")
+            {
+                if(llList2String(p,1)=="s")
+                {
+                    if(llList2String(p,2)=="g")
+                    {
+                         llSetLinkTexture(LINK_SET, "7846bd00-1ffc-a516-0875-5e15fc641e90", ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="b")
+                    {
+                         llSetLinkTexture(LINK_SET, "736c8983-f0e4-4eb7-d260-ffe13113558e", ALL_SIDES);
+                    }
+                    else if(llList2String(p,2)=="r")
+                    {
+                         llSetLinkTexture(LINK_SET, "7724d67c-2e5d-e955-f7fb-e8cb5f60ecff", ALL_SIDES);
+                    }
+                }
+            }
+        }
+    }
+}
