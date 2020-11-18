@@ -1,0 +1,80 @@
+integer channel = -62017;
+
+default
+{
+    state_entry()
+    {
+        ;
+    }
+
+    touch_start(integer num)
+    {
+        integer face = llDetectedTouchFace(0);
+        vector  touchUV   = llDetectedTouchUV(0);
+        if(face==1)
+        {
+            if(touchUV.y>0.5)
+            {
+                if(touchUV.x<(1.0/7))
+                {
+                    llSay(channel,"c|s|g");
+                }
+                else if(touchUV.x<(2.0/7))
+                {
+                    llSay(channel,"c|s|b");
+                }
+                else if(touchUV.x<(3.0/7))
+                {
+                    llSay(channel,"c|s|r");
+                }
+                else if(touchUV.x<(4.0/7))
+                {
+                    llSay(channel,"s|t|c");
+                }
+                else if(touchUV.x<(5.0/7))
+                {
+                    llSay(channel,"s|s|c");
+                }
+                else if(touchUV.x<(6.0/7))
+                {
+                    llSay(channel,"s|b|c");
+                }
+                else if(touchUV.x<1.0)
+                {
+                    llSay(channel,"s|p|c");
+                }
+            }
+            else if(touchUV.y>0.0)
+            {
+                if(touchUV.x<(1.0/7))
+                {
+                    llSay(channel,"c|t|b");
+                }
+                else if(touchUV.x<(2.0/7))
+                {
+                    llSay(channel,"c|t|r");
+                }
+                else if(touchUV.x<(3.0/7))
+                {
+                    llSay(channel,"c|t|g");
+                }
+                else if(touchUV.x<(4.0/7))
+                {
+                    llSay(channel,"s|t|o");
+                }
+                else if(touchUV.x<(5.0/7))
+                {
+                    llSay(channel,"s|s|o");
+                }
+                else if(touchUV.x<(6.0/7))
+                {
+                    llSay(channel,"s|b|o");
+                }
+                else if(touchUV.x<1.0)
+                {
+                    llSay(channel,"s|p|o");
+                }
+            }
+        }
+    }
+}
