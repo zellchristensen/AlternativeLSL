@@ -1,3 +1,15 @@
+Descs:
+"cell"
+"body"
+"left"
+"right"
+"drag" (eye)
+"drag" (cm)
+"palette" f2 (col)
+"palette" f4 (lum)
+
+
+
 default
 {
     state_entry()
