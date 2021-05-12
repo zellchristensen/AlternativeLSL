@@ -1,0 +1,126 @@
+string alpha;
+integer ch = 242526;
+integer gListener;
+
+getAlpha()
+{
+    integer max = llGetNumberOfPrims();
+    ++max;
+    integer i = 0;
+    for(i;i<max;++i)
+    {
+        if(llList2String(llGetLinkPrimitiveParams(i,[PRIM_DESC]),0)=="alpha")
+            alpha+=","+(string)i;
+    }
+    alpha = llDeleteSubString(alpha,0,0);
+}
+
+setAlpha(float al)
+{
+    list a = llCSV2List(alpha);
+    integer max = llGetListLength(a);
+    integer i = 0;
+    for(i;i<max;++i)
+    {
+        llSetLinkAlpha((integer)llList2String(a,i), al, ALL_SIDES);
+    }
+}
+
+part()
+{
+    llParticleSystem([
+        PSYS_PART_FLAGS,( 0
+            |PSYS_PART_INTERP_COLOR_MASK
+            |PSYS_PART_INTERP_SCALE_MASK
+            |PSYS_PART_BOUNCE_MASK
+            |PSYS_PART_FOLLOW_SRC_MASK
+            |PSYS_PART_FOLLOW_VELOCITY_MASK
+            |PSYS_PART_EMISSIVE_MASK ),
+        PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_EXPLODE ,
+        PSYS_PART_START_ALPHA,1,
+        PSYS_PART_END_ALPHA,0.0117647,
+        PSYS_PART_START_COLOR,<1,1,1> ,
+        PSYS_PART_END_COLOR,<1,1,1> ,
+        PSYS_PART_START_SCALE,<0.1875,0.1875,0>,
+        PSYS_PART_END_SCALE,<0.28125,0.28125,0>,
+        PSYS_PART_MAX_AGE,5,
+        PSYS_SRC_MAX_AGE,0.5,
+        PSYS_SRC_ACCEL,<0,0,-2>,
+        PSYS_SRC_BURST_PART_COUNT,2,
+        PSYS_SRC_BURST_RADIUS,0,
+        PSYS_SRC_BURST_RATE,0.01,
+        PSYS_SRC_BURST_SPEED_MIN,0.5,
+        PSYS_SRC_BURST_SPEED_MAX,2,
+        PSYS_SRC_ANGLE_BEGIN,0.09375,
+        PSYS_SRC_ANGLE_END,1,
+        PSYS_SRC_OMEGA,<0,0,0>,
+        PSYS_SRC_TEXTURE, "sponge",
+        PSYS_SRC_TARGET_KEY, (key)"00000000-0000-0000-0000-000000000000"
+     ]);
+}
+
+default
+{
+    state_entry()
+    {
+        llSetText("Click to become a pony!", <1,1,1>, 1.0);
+        getAlpha();
+    }
+
+    touch_end(integer num)
+    {
+        key o = llGetOwner();
+        if(llDetectedKey(0)==o)
+        {
+            gListener = llListen(ch, "", o, "");
+            llDialog(o, "Which do you want to be?", ["Colt","Filly","Both","Extras!"], ch);
+        }
+    }
+
+    on_rez(integer start_param)
+    {
+        llResetScript();
+    }
+
+    listen(integer channel, string name, key id, string message)
+    {
+        if(id==llGetOwner())
+        {
+            if(message=="Colt")
+            {
+            }
+            else if(message=="Filly")
+            {
+            }
+            else if(message=="Both")
+            {
+            }
+            else if(message=="Extras!")
+            {
+            }
+            else
+            {
+                jump break;
+            }
+            llSetTimerEvent(15);
+            part();
+            setAlpha(1.0);
+            llTriggerSound("forever",1.0);
+        }
+        @break;
+    }
+
+    timer()
+    {
+        llSetTimerEvent(0);
+        setAlpha(0.0);
+    }
+
+    changed( integer change )
+    {
+        if (change & CHANGED_LINK)
+        {
+            llResetScript();
+        }
+    }
+}
