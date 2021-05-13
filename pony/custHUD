@@ -1,19 +1,91 @@
-Descs:
-"cell"
-"body"
-"left"
-"right"
-"drag" (eye)
-"drag" (cm)
-"palette" f2 (col)
-"palette" f4 (lum)
+vector hsl = <0.5,0.5,0.5>;
+integer c;
 
-
+vector Hsl2Rgb(vector in){
+    vector rgb1; float q; float p; float tr; float tg; float tb;
+    if (in.x < 0) in.x = 0; else if (in.x > 1.0) in.x = 1.0;
+    if (in.y < 0) in.y = 0; else if (in.y > 1.0) in.y = 1.0;
+    if (in.z < 0) in.z = 0; else if (in.z > 1.0) in.z = 1.0;
+    if (in.y == 0){
+        rgb1.z = in.z; rgb1.y = rgb1.z; rgb1.x = rgb1.y; return rgb1;}
+    if (in.z < 0.5) q = in.z * (1.0 + in.y);
+    else if (in.z >= 0.5) q = in.z + in.y - (in.z * in.y);
+    p = 2 * in.z - q; tr = in.x + (1.0 / 3.0);
+    tg = in.x; tb = in.x - (1.0 / 3.0);
+    if (tr < 0) tr = tr + 1.0; else if (tr > 1.0) tr = tr - 1.0;
+    if (tg < 0) tg = tg + 1.0; else if (tg > 1.0) tg = tg - 1.0;
+    if (tb < 0) tb = tb + 1.0; else if (tb > 1.0) tb = tb - 1.0;
+    if (tr < (1.0 / 6.0)) rgb1.x = p + ((q - p) * 6 * tr);
+    else if ((1.0 / 6.0) <= tr && tr < 0.5) rgb1.x = q;
+    else if (0.5 <= tr && tr < (2.0 / 3.0)) rgb1.x = p + ((q - p) * 6 * ((2.0 / 3.0) - tr));
+    else rgb1.x = p;
+    if (tg < (1.0 / 6.0)) rgb1.y = p + ((q - p) * 6 * tg);
+    else if ((1.0 / 6.0) <= tg && tg < 0.5) rgb1.y = q;
+    else if (0.5 <= tg && tg < (2.0 / 3.0)) rgb1.y = p + (( q - p) * 6 * ((2.0 / 3.0) - tg));
+    else rgb1.y = p;
+    if (tb < (1.0 / 6.0)) rgb1.z = p + ((q - p) * 6 * tb);
+    else if ((1.0 / 6.0) <= tb && tb < 0.5) rgb1.z = q;
+    else if (0.5 <= tb && tb < (2.0 / 3.0)) rgb1.z = p + ((q - p) * 6 * ((2.0 / 3.0) - tb));
+    else rgb1.z = p;
+    return rgb1;}
 
 default
 {
     state_entry()
     {
-        ;
+        integer max = llGetNumberOfPrims();
+        integer i = 1;
+        for(i;i<max+1;++i)
+        {
+            if(llList2String(llGetLinkPrimitiveParams(i,[PRIM_NAME]),0)=="[W] Color Pick")
+                c=i;
+        }
+        llSay(0, "Script running");
+    }
+
+    touch(integer num)
+    {
+        integer l = llDetectedLinkNumber(0);
+        string d = llList2String(llGetLinkPrimitiveParams(l,[PRIM_DESC]),0);
+        if(d=="cell")
+        {
+            ;
+        }
+        else if(d=="body")
+        {
+            ;
+        }
+        else if(d=="left")
+        {
+            ;
+        }
+        else if(d=="right")
+        {
+            ;
+        }
+        else if(d=="drag")
+        {
+            ;
+        }
+        else if(d=="palette")
+        {
+            if(llDetectedTouchFace(0)==2)
+            {
+                vector v = llDetectedTouchST(0);
+                v.x=1.0-v.x;
+                hsl = <v.y,v.x,hsl.z>;
+                llSay(-1,(string)Hsl2Rgb(hsl));
+                v.y=1.0-v.y;
+                llSetLinkPrimitiveParamsFast(c,[PRIM_TEXTURE,2, "dot", <1.0,1.0,0>, v, 0]);
+            }
+            else if(llDetectedTouchFace(0)==4)
+            {
+                vector v = llDetectedTouchST(0);
+                hsl = <hsl.x,hsl.y,v.x>;
+                llSay(-1,(string)Hsl2Rgb(hsl));
+                llSetLinkPrimitiveParamsFast(c,[PRIM_TEXTURE,4, "arrow", <1.0,1.0,0>, <0,v.x,0>, 90*DEG_TO_RAD]);
+            }
+
+        }
     }
 }
