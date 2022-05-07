@@ -1,0 +1,11 @@
+vector offset = < 0, 0, 1>;
+key owner;
+default
+{
+    state_entry()
+    {
+        owner = llGetOwner();
+        while(1)
+        llSetRegionPos(llList2Vector(llGetObjectDetails( owner, [OBJECT_POS] ),0)+offset);
+    }
+}
