@@ -5,15 +5,12 @@ move()
     vector m = pos-dest;
     vector u = llVecNorm(m);
 
-    float dist = llVecDist( dest, pos );//llPow((llPow((p.x-d.x),2.0) + llPow((p.y-d.y),2.0) + llPow((p.z-d.z),2.0)),0.5);
+    float dist = llVecDist( dest, pos );
     llOwnerSay("Now teleporting to " + (string)dest);
-    //llOwnerSay("\nStart: " + (string)pos + "\nDest: " + (string)dest + "\nMain: " + (string)m + "\nUnit: " + (string)u + "\nDist: " + (string)dist);
     llSetTimerEvent(5);
     while(dist>32)
     {
-        //llOwnerSay("\nStart: " + (string)pos + "\nDest: " + (string)dest + "\nDist: " + (string)dist);
         llMoveToTarget(pos - u*32, 0.045);
-
         pos = llGetPos();
         m = pos-dest;
         u = llVecNorm(m);
