@@ -31,4 +31,21 @@ default
     {
         move();
     }
+    
+        on_rez(integer start_param)
+    {
+        if(llGetAttached())
+        {
+            owner = llGetOwner();
+            llRequestPermissions(owner, PERMISSION_TRACK_CAMERA);
+        }
+    }
+
+    run_time_permissions(integer perm)
+    {
+        if (perm & PERMISSION_TRACK_CAMERA)
+        {
+            ;
+        }
+    }
 }
