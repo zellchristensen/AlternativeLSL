@@ -1,0 +1,115 @@
+vector offset = <0,0,2>;
+key owner;
+key target;
+integer lis;
+integer chan;
+list names;
+list keys;
+
+new(key i)
+{
+    llListenRemove(lis);
+    chan = (integer)(llFrand(1)*1000+1);
+    lis = llListen(chan,"", i,"");
+    llSetTimerEvent(20);
+}
+
+say(string newName,string text)
+{
+    string oldName = llGetObjectName();
+    llSetObjectName(newName);
+    llSay(0,"/me"+text);
+    llSetObjectName(oldName);
+}
+
+move(vector dest)
+{
+    vector pos = llGetPos();
+    vector m = pos-dest;
+    vector u = llVecNorm(m);
+
+    float dist = llVecDist( dest, pos );
+    while(dist>32)
+    {
+        llMoveToTarget(pos - u*32, 0.045);
+        pos = llGetPos();
+        m = pos-dest;
+        u = llVecNorm(m);
+        dist = llVecDist( dest, pos );
+    }
+    llMoveToTarget(dest, 0.045);
+}
+
+default
+{
+    state_entry()
+    {
+        llSetColor(<1, 1, 1>, ALL_SIDES);
+        llSitTarget(<0,0,0>, ZERO_ROTATION);
+        owner = llGetOwner();
+    }
+
+    on_rez(integer start_param)
+    {
+        if(llGetAttached())
+        {
+            owner = llGetOwner();
+            llRequestPermissions(owner, PERMISSION_TAKE_CONTROLS);
+        }
+    }
+
+    listen( integer channel, string lname, key id, string message )
+    {
+        target = llList2Key(keys,llListFindList(names,[message]));
+
+        if (target != NULL_KEY)
+        {
+                llSetColor(<1, 0, 1>, ALL_SIDES);
+                llSetTimerEvent(0.05);
+        }
+    }
+
+    run_time_permissions(integer perm)
+    {
+        if (PERMISSION_TAKE_CONTROLS & perm)
+        {
+            llTakeControls(CONTROL_UP, TRUE, TRUE);
+        }
+    }
+
+    touch_end(integer t)
+    {
+        if(llDetectedKey(0)==owner)
+        {
+            if (target != NULL_KEY)
+            {
+                llSetTimerEvent(0);
+                llStopMoveToTarget();
+                target = NULL_KEY;
+                llSetColor(<1, 1, 1>, ALL_SIDES);
+            }
+            else
+            {
+                llSensor("", NULL_KEY, AGENT, 100, PI);
+            }
+        }
+    }
+
+    timer()
+    {
+        move(offset+llList2Vector(llGetObjectDetails(target, [OBJECT_POS]), 0));
+    }
+
+    sensor(integer total_number)
+    {
+        integer i;
+        names = [];
+        for (i=0; i<total_number; ++i)
+        {
+            keys += llDetectedKey(i);
+            names += llDetectedName(i);
+        }
+        new(owner);
+        llDialog(owner, "Choose User", names, chan);
+    }
+}
