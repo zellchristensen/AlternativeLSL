@@ -1,0 +1,46 @@
+float minSize = 1.5; //SizeInMeters
+integer scanInterval = 2; //TimeInSeconds
+integer delay = 50; //TimeInSeconds
+string kickMessage = "Sorry, but you will be removed now.";
+string warnMessage = "We dont allow any avatars below your height, you will be teleported away.  Make sure your avatar is at least 150 cm before returning.";
+list whiteList = [
+"Zell Christensen"
+];
+
+list shortUsers = [];
+
+
+setText(string t){
+    llSetText(t,<1,0,1>,1.0);}
+
+default{
+    state_entry(){
+        setText("");
+        llSetTimerEvent(scanInterval);}
+
+    timer(){
+        llSetTimerEvent(0);
+        integer max = llGetListLength(shortUsers)/2;
+        integer i = 0;
+        if(max)
+            for(i;i<max;++i)
+                if(llList2Integer(shortUsers,i*2+1)<=0){
+                    key k = llList2Key(shortUsers,i*2);
+                    llDialog(k, kickMessage, [], -1);
+                    llTeleportAgent(k, "hg.osgrid.org:80", <13.0, 38.0, 23.5>, <13.0, 12.0, 23.5>);
+                    shortUsers = llDeleteSubList(shortUsers, i*2, i*2+1);}
+                else{
+                    integer t = llList2Integer(shortUsers,i+1)-(1+scanInterval);
+                    if(t<0)
+                        t=0;
+                    shortUsers = llListReplaceList(shortUsers,[t], i*2+1, i*2+1);
+                    llDialog(llList2Key(shortUsers,i*2),(string)t+"s Left.\n"+warnMessage, [], -1);}
+
+        list users = llGetAgentList(AGENT_LIST_REGION, []);
+        max = llGetListLength(users);
+        i = 0;
+        for(i;i<max;++i){
+            key k = llList2Key(users,i);
+            if(llGetAgentSize(k).z < minSize && !~llListFindList(whiteList, [llKey2Name(k)]) && !~llListFindList(shortUsers, [k]))
+                shortUsers+= [k,delay];
+                llSetTimerEvent(scanInterval);}}}
