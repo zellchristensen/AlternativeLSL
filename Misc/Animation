@@ -1,0 +1,45 @@
+key OWNER;
+string ANIM;
+
+default
+{
+    changed(integer change)
+    {
+        if(change & (CHANGED_OWNER | CHANGED_INVENTORY))
+            llResetScript();
+    }
+
+    state_entry()
+    {
+        OWNER = llGetOwner();
+        ANIM = llGetInventoryName(INVENTORY_ANIMATION, 0);
+        if(llGetAttached())
+            llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS | PERMISSION_TRIGGER_ANIMATION);
+    }
+
+    run_time_permissions(integer perm)
+    {
+        if(perm & PERMISSION_TAKE_CONTROLS)
+            llTakeControls(CONTROL_FWD, TRUE, TRUE);
+        if(perm & PERMISSION_TRIGGER_ANIMATION)
+            llStartAnimation(ANIM);
+    }
+
+    attach(key id)
+    {
+        if(llGetOwner()!=OWNER)
+            llResetScript();
+        else if(id != NULL_KEY)
+            llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS | PERMISSION_TRIGGER_ANIMATION);
+        else
+            llStopAnimation(ANIM);
+    }
+
+    on_rez(integer start_param)
+    {
+        if(llGetOwner()!=OWNER)
+            llResetScript();
+        else if(llGetAttached())
+            llRequestPermissions(OWNER, PERMISSION_TAKE_CONTROLS | PERMISSION_TRIGGER_ANIMATION);
+    }
+}
