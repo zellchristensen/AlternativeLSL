@@ -1,0 +1,73 @@
+integer c=0;
+integer total;
+integer status=0;
+float t;
+string a;
+integer p=0;
+default
+{
+    state_entry()
+    {
+        string animation = llGetInventoryName(INVENTORY_ANIMATION,0);
+        llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
+        if (animation)
+        {
+            a=animation;
+        }
+        else
+        {
+            llOwnerSay("No animation found, drop one animation in the inventory!");
+        }
+        llListen(1,"","","");
+        t=(float)llGetObjectDesc();
+        total=llGetInventoryNumber(INVENTORY_SOUND);
+        llPreloadSound(llGetInventoryName(INVENTORY_SOUND,c));
+    }
+
+    run_time_permissions(integer perm)
+    {
+        if (perm & PERMISSION_TRIGGER_ANIMATION)
+        {
+            p=1;
+        }
+    }
+
+    on_rez(integer start_param)
+    {
+        llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
+    }
+
+    touch_end(integer num)
+    {
+        if(status)
+        {
+            llStopAnimation(a);
+            llSetLinkPrimitiveParamsFast(LINK_SET, [ PRIM_GLOW, ALL_SIDES, 0.0] );
+            llStopSound();
+            llOwnerSay(llDetectedName(0)+" turned off");
+            status=0;
+            llSetTimerEvent(0);
+            llStopSound();
+        }
+        else
+        {
+            llSetLinkPrimitiveParamsFast(LINK_SET, [ PRIM_GLOW, ALL_SIDES, 0.03] );
+            c=0;
+            llOwnerSay(llDetectedName(0)+" turned on");
+            status=1;
+            llSetTimerEvent(1);
+        }
+    }
+
+    timer()
+    {
+        llSetTimerEvent(t);
+        if(p)
+            llStartAnimation(a);
+        llLoopSound(llGetInventoryName(INVENTORY_SOUND,c),1.0);
+        ++c;
+        if(c==total)
+            c=0;
+        llPreloadSound(llGetInventoryName(INVENTORY_SOUND,c));
+    }
+}
